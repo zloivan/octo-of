@@ -97,3 +97,8 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# Auto-generated Unity assets of transient nature.
+/Assets/NaninovelData/Transient*
+# Transient artifacts of the external tools.
+/Assets/NaninovelData/.nani/Transient*
