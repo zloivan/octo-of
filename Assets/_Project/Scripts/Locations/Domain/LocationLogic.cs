@@ -60,12 +60,14 @@ namespace Locations.Domain
             _consumedItemIdSet.Contains(itemId);
 
         public LocationLogicSnapshot GetSnapshot() =>
-            new(_currentLocation.Id, _locationHistoryStack.ToArray(), _consumedItemIdSet.ToArray());
+            new(_currentLocation?.Id, _locationHistoryStack.ToArray(), _consumedItemIdSet.ToArray());
 
 
         public void LoadSnapshot(LocationLogicSnapshot snapshot)
         {
-            _currentLocation = GetLocation(snapshot.CurrentLocationId);
+            _currentLocation = !string.IsNullOrEmpty(snapshot.CurrentLocationId)
+                ? GetLocation(snapshot.CurrentLocationId)
+                : null;
             _locationHistoryStack = new Stack<string>(snapshot.LocationHistory);
             _consumedItemIdSet = new HashSet<string>(snapshot.ConsumedItemIds);
         }

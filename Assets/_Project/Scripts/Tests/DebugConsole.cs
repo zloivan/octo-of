@@ -1,5 +1,6 @@
 using Locations;
 using Naninovel;
+using Utilities;
 
 namespace Tests
 {
@@ -27,6 +28,25 @@ namespace Tests
         public static void ConsumeConsole(string itemId)
         {
             Engine.GetService<LocationService>()?.OnItemClicked(itemId);
+        }
+        
+        [ConsoleCommand("save")]
+        public static void SaveConsole()
+        {
+            Engine.GetService<IStateManager>()?.QuickSave();
+        }
+        
+        [ConsoleCommand("load")]
+        public static void LoadConsole()
+        {
+            Engine.GetService<IStateManager>()?.QuickLoad();
+        }
+        
+        [ConsoleCommand("currentLocation")]
+        public static void CurrentLocationConsole()
+        {
+            var location = Engine.GetService<LocationService>()?.GetCurrentLocationId();
+            OFLogger.Log($"Current Location: {location}");
         }
     }
     

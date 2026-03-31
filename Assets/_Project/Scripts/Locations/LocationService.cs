@@ -8,7 +8,7 @@ using Utilities;
 namespace Locations
 {
     [InitializeAtRuntime]
-    public class LocationService : IStatefulService<LocationServiceState>
+    public class LocationService : IStatefulService<GameStateMap>
     {
         public event Action<LocationData> OnLocationEntered;
 
@@ -40,26 +40,33 @@ namespace Locations
             OFLogger.Log("LocationService destroyed");
         }
 
-        public void SaveServiceState(LocationServiceState stateMap)
+        // Сохранение состояния в общую карту сессии
+        public void SaveServiceState(GameStateMap stateMap)
         {
             var snapshot = _logic.GetSnapshot();
-
-            stateMap.CurrentLocationId = snapshot.CurrentLocationId;
-            stateMap.LocationHistoryArray = snapshot.LocationHistory;
-            stateMap.ConsumedItemsIdArray = snapshot.ConsumedItemIds;
-
-
-            OFLogger.Log("LocationService saved");
+            var state = new LocationServiceState
+            {
+                CurrentLocationId = snapshot.CurrentLocationId,
+                LocationHistoryArray = snapshot.LocationHistory,
+                ConsumedItemsIdArray = snapshot.ConsumedItemIds
+            };
+            
+            stateMap.SetState(state); // Упаковка кастомного объекта [4]
         }
 
-        public UniTask LoadServiceState(LocationServiceState stateMap)
+        // Загрузка состояния из карты сессии
+        public UniTask LoadServiceState(GameStateMap stateMap)
         {
-            _logic.LoadSnapshot(new LocationLogicSnapshot(
-                stateMap.CurrentLocationId,
-                stateMap.LocationHistoryArray ?? Array.Empty<string>(),
-                stateMap.ConsumedItemsIdArray ?? Array.Empty<string>()));
-
-            OFLogger.Log("LocationService loaded");
+            var state = stateMap.GetState<LocationServiceState>(); // Извлечение по типу [4]
+            
+            if (state != null)
+            {
+                _logic.LoadSnapshot(new LocationLogicSnapshot(
+                    state.CurrentLocationId,
+                    state.LocationHistoryArray ?? Array.Empty<string>(),
+                    state.ConsumedItemsIdArray ?? Array.Empty<string>()));
+            }
+            
             return UniTask.CompletedTask;
         }
 
@@ -88,5 +95,8 @@ namespace Locations
             OnLocationEntered?.Invoke(_logic.GetCurrentLocation());
             OFLogger.Log($"LocationService go back to: {_logic.GetCurrentLocation().Id}");
         }
+
+        public string GetCurrentLocationId() =>
+            _logic.GetCurrentLocation()?.Id;
     }
 }
