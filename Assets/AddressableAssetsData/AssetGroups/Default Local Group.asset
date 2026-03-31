@@ -14,7 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_GroupName: Default Local Group
   m_GUID: e4745b242e2624ac79ddc320a76669f2
-  m_SerializeEntries: []
+  m_SerializeEntries:
+  - m_GUID: a7abd4fe88084440ab78255c406976f3
+    m_Address: Assets/_Project/Art/Static/Tests/Green-sprite.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cb61671860b9349088e45382ef8d6421
+    m_Address: Assets/_Project/Art/Static/Tests/Day1_static6_1.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 1458837b6d78b4784b583d32d4723027, type: 2}
   m_SchemaSet:
