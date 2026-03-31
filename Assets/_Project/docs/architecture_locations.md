@@ -22,12 +22,8 @@ Naninovel Canvas
 ### Почему Custom UI, не отдельный Canvas
 Оба слоя в одном Canvas Naninovel → одно пространство координат → не могут разъехаться при смене разрешения.
 
-### Спайк 1.1.1 — Масштабирование фона Naninovel
-Нужно определить, как Naninovel масштабирует Background actor при смене разрешения:
-- Stretch (обрезка) → `HotspotLayerUI` должна синхронизировать Rect с фоном
-- Fit (letterbox) → `HotspotLayerUI` может быть независимой
-
-**Блок 1.1.1 (спайк) решает этот вопрос.**
+### Спайк 1.1.1 — ЗАКРЫТ
+Хотспоты — World Space `SpriteRenderer` как дочерние объекты Background actor. Позиции хранятся как `Vector2 normalizedPosition [0,1]`, конвертируются в `localPosition` через `mesh.bounds.size` в runtime. Подробности: `spike_1_1_1_report.md`.
 
 ---
 
@@ -67,14 +63,20 @@ Naninovel Canvas
 
 ---
 
-## 6. Конфиги (фрагмент — локации)
+## 6. Слои данных (конфиги и домен)
+
+Система локаций использует два чётко разделённых слоя данных.
+
+### Инфраструктурный слой (Unity SO)
+
+Используется для настройки в Inspector и загрузки ассетов через Addressables. Содержит Unity-специфичные типы (`AssetReference`, `AssetReferenceSprite`). **Не передаётся за пределы `LocationService`.**
 
 ```
-LocationConfig : ScriptableObject      ← корневой конфиг локаций, один на проект
+LocationConfig : ScriptableObject      ← корневой конфиг, один на проект
   └── LocationDefinition[]
         ├── id: string
         ├── videoRef: AssetReference
-        ├── hotspotPrefabRef: AssetReference     ← префаб хотспотов этой локации
+        ├── hotspotPrefabRef: AssetReference
         ├── onEnterScript: string                ← имя .nani скрипта (опционально)
         ├── hasBackButton: bool
         └── hotspots: HotspotEntry[]
@@ -85,39 +87,101 @@ LocationConfig : ScriptableObject      ← корневой конфиг лок�
               ├── conditionValue: string
               └── itemConfig: AssetReference<InteractableItemConfig>  (только для Item)
 
-InteractableItemConfig : ScriptableObject  ← для предметов типа Item
+InteractableItemConfig : ScriptableObject
   ├── type: QuestItem | Secret
-  ├── onClickScript: string               ← имя .nani скрипта
-  ├── objectiveTag: string                ← тег для QuestService.ReportEvent
+  ├── onClickScript: string
+  ├── objectiveTag: string
   ├── attractionDelta: int
   ├── suspicionDelta: int
   └── characterId: string
 ```
 
-```csharp
-public enum ActivationCondition { Always, RequiresQuestId, RequiresFlag }
+### Доменный слой (plain C#)
 
-public class HotspotEntry {
-    public string id;
-    public string localizationKey;
-    public AssetReferenceSprite spriteRef;
-    public HotspotType type;                              // Transition | MiniGame | Item
-    public ActivationCondition condition;
-    public string conditionValue;
-    public AssetReference<InteractableItemConfig> itemConfig; // только для type == Item
+Используется только `LocationLogic`. Не содержит `UnityEngine`, `AssetReference` или `MonoBehaviour`. Создаётся `LocationService` при инициализации путём маппинга из инфраструктурного слоя.
+
+```csharp
+public class LocationData
+{
+    public string Id;
+    public string OnEnterScript;
+    public bool HasBackButton;
+    public HotspotData[] Hotspots;
+}
+
+public class HotspotData
+{
+    public string Id;
+    public HotspotType Type;
+    public ActivationCondition Condition;
+    public string ConditionValue;
 }
 ```
+
+`HotspotType` и `ActivationCondition` — чистые C# enum, используются обоими слоями.
+
+### Маппинг
+
+Каждый инфра-класс сам знает как спроецировать себя в доменный тип:
+
+```csharp
+// LocationDefinition.cs
+public LocationData ToLocationData() => new LocationData
+{
+    Id            = id,
+    OnEnterScript = onEnterScript,
+    HasBackButton = hasBackButton,
+    Hotspots      = hotspots.Select(h => h.ToHotspotData()).ToArray()
+};
+
+// HotspotEntry.cs
+public HotspotData ToHotspotData() => new HotspotData
+{
+    Id             = id,
+    Type           = type,
+    Condition      = condition,
+    ConditionValue = conditionValue
+};
+```
+
+`LocationService.InitializeService()` использует эти методы:
+
+```csharp
+var data = _config.locations.Select(d => d.ToLocationData()).ToArray();
+_logic = new LocationLogic(data);
+```
+
+```
+LocationConfig (SO)
+      │  .ToLocationData()  на каждом LocationDefinition
+      ▼
+LocationData[] → LocationLogic
+```
+
+За пределы `LocationService` уходит только `LocationData`. `OnLocationEntered` event несёт `LocationData`, не `LocationDefinition`.
 
 > Все ссылки на ассеты — только через `AssetReference`. Имена .nani скриптов — `string` (Naninovel загружает по имени нативно).
 
 ---
 
-## 7. Команды и Bootstrapper (фрагмент — локации)
+## 7. Регистрация (фрагмент — локации)
+
+### Регистрация сервиса
+
+`[InitializeAtRuntime]` — Naninovel находит сервис автоматически. `GameConfig` инжектируется через конструктор:
 
 ```csharp
-.AddEngineService<LocationService>(locationConfig)
-.RegisterCommand<EnterLocationCommand>()         // @enterLocation id:backyard
+[InitializeAtRuntime]
+public class LocationService : IStatefulService<LocationServiceState>
+{
+    public LocationService(GameConfig gameConfig)
+    {
+        _config = gameConfig.LocationConfig;
+    }
+}
 ```
+
+`EnterLocationCommand` регистрировать вручную не нужно — Naninovel находит все `Command`-наследники через рефлексию.
 
 ### В .nani скриптах
 ```
@@ -125,29 +189,51 @@ public class HotspotEntry {
 @enterLocation id:backyard          ← LocationService.Enter()
 ```
 
-### LocationService.State (Persistence)
+### LocationServiceState (Naninovel serialization contract)
+
 ```csharp
 [System.Serializable]
-public class State
+public class LocationServiceState
 {
     public string CurrentLocationId;
-    public string[] LocationHistory;
-    public string[] ConsumedItemIds;   // id предметов, уже подобранных игроком (одноразовые)
+    public string[] LocationHistory;  // TODO: временно — стек истории переходов.
+                                      // По GDD кнопка "Назад" — возврат из тупиковой локации
+                                      // в фиксированную родительскую, не произвольная история.
+                                      // Заменить на parentLocationId после реализации
+                                      // LocationTransitionManager в доменном слое.
+    public string[] ConsumedItemIds;
 }
 ```
 
-`ConsumedItemIds` пополняется в `LocationService.OnInteractableItemClicked()` сразу после выполнения `onClickScript`. При входе на локацию `HotspotLayerUI` пропускает активацию хотспотов, чьи id присутствуют в этом списке.
+Runtime-состоянием владеет `LocationLogic`. `LocationServiceState` — только контракт для Naninovel JSON-сериализации, заполняется через `LocationLogicSnapshot`.
 
-`ResetService()` очищает `ConsumedItemIds` вместе с остальным состоянием.
+### LocationLogicSnapshot
+
+Промежуточный объект между доменным состоянием и Naninovel-контрактом. Чистый C#, без Unity-зависимостей:
+
+```csharp
+public readonly struct LocationLogicSnapshot
+{
+    public readonly string CurrentLocationId;
+    public readonly string[] LocationHistory;  // TODO: временно, см. LocationServiceState
+    public readonly string[] ConsumedItemIds;
+}
+```
+
+> **TODO:** `LocationHistory` + `GoBack()` — временная реализация не соответствующая GDD.
+> По GDD кнопка "Назад" доступна только в тупиковых локациях и возвращает в фиксированную
+> родительскую точку. Текущий стек истории будет заменён на `LocationTransitionManager`
+> в доменном слое с `parentLocationId` в конфиге. Текущая реализация функционально корректна
+> для демо.
 
 ### ReportEvent из LocationService
 ```csharp
-public void OnInteractableItemClicked(string itemId) {
-    // выполняем onClickScript...
-    // добавляем в ConsumedItemIds...
-
-    var eventReporter = Engine.GetService<IQuestEventReporter>();
-    eventReporter.ReportEvent(_itemConfigMap[itemId].objectiveTag);
+public void OnItemClicked(string itemId)
+{
+    _logic.MarkConsumed(itemId);
+    // Полная реализация — Ticket 1.3.3
+    Engine.GetService<IQuestEventReporter>()
+        ?.ReportEvent(_itemConfigMap[itemId].objectiveTag); // null-safe
 }
 ```
 

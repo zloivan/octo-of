@@ -12,32 +12,50 @@
 Всё через Naninovel DI. Никаких параллельных систем и своих обёрток над Naninovel.
 
 ```
-LocationLogic (plain C#)         ← доменная логика, без зависимостей
+LocationLogic (plain C#)              ← доменная логика, runtime-состояние
         ↑
-LocationService : IEngineService ← регистрация в Naninovel, lifecycle
+LocationService : IStatefulService    ← Naninovel lifecycle, тонкий фасад
         ↑
-EnterLocationCommand : Command   ← @enterLocation id:backyard в .nani
+EnterLocationCommand : Command        ← @enterLocation id:backyard в .nani
 ```
+
+### Регистрация сервисов
+Каждый кастомный сервис регистрируется атрибутом `[InitializeAtRuntime]` — Naninovel находит и инициализирует его автоматически:
+
+```csharp
+[InitializeAtRuntime]
+public class LocationService : IStatefulService<LocationServiceState>
+{
+    public LocationService(GameConfig gameConfig) { ... }
+}
+```
+
+Порядок инициализации определяется топологически по конструкторным зависимостям — если `LocationService` принимает `GameConfig` в конструкторе, Naninovel гарантирует что `GameConfig` будет готов раньше.
+
+Кастомные команды Naninovel находит автоматически через рефлексию — отдельной регистрации не требуют.
+
+### Конфигурация — GameConfig
+
+Единый корневой конфиг проекта. Наследует `Configuration` — Naninovel инжектирует его в конструкторы сервисов автоматически.
+
+```csharp
+[EditInProjectSettings]
+public class GameConfig : Configuration
+{
+    public LocationConfigSO LocationConfig;
+    // QuestConfigSO QuestConfig;
+    // ScaleConfigSO ScaleConfig;
+}
+```
+
+`LocationConfigSO`, `QuestConfigSO` и т.д. — обычные `ScriptableObject`. Ссылки на них настраиваются через `Naninovel → Configuration → GameConfig` в редакторе.
+
+Asset хранится в `NaninovelData/Resources/Naninovel/Configuration/GameConfig.asset` — генерируется автоматически при первом открытии меню.
 
 ### Доступ из любой точки
 ```csharp
-// Из другого сервиса
+// Из другого сервиса или команды
 Engine.GetService<LocationService>().Enter("backyard");
-
-// Из debug консоли — та же строчка
-// Из кастомной Naninovel команды — через Command base class
-```
-
-### Регистрация (Bootstrapper)
-Каждый модуль документирует свои сервисы и команды самостоятельно. Bootstrapper собирает их все:
-```csharp
-new Bootstrapper()
-    .AddEngineService<LocationService>(...)   // см. architecture_locations.md
-    .AddEngineService<QuestService>(...)      // см. architecture_quests.md
-    .AddEngineService<SeductionScaleService>(...) // см. architecture_scales.md
-    .AddEngineService<MiniGameService>(...)   // см. architecture_minigames.md
-    // + команды каждого модуля
-    .Wire(Engine);
 ```
 
 ### Почему не @goto или встроенные команды Naninovel для смены локации
@@ -81,7 +99,7 @@ public class HotspotView : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 4. Подписывается на события сервиса
 5. Обновляет View на основе событий сервиса
 
-Контроллер регистрируется в Bootstrapper как `AddServiceComponent<LocationController>()` или просто создаётся как часть сцены.
+Контроллер создаётся как часть сцены или регистрируется через Naninovel Custom UI.
 
 ---
 
@@ -91,15 +109,36 @@ public class HotspotView : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 Каждый stateful сервис реализует `IStatefulService<TState>`:
 
 ```csharp
-public interface IStatefulService<TState>
+// Реальный интерфейс Naninovel 1.20
+public interface IStatefulService<TState> : IEngineService
 {
-    TState GetState();
-    void SetState(TState state);
-    void ResetService();
+    void SaveServiceState(TState stateMap);
+    UniTask LoadServiceState(TState stateMap);
 }
 ```
 
-Naninovel вызывает `GetState()` при сохранении, `SetState()` при загрузке. Формат — JSON.
+Naninovel передаёт `stateMap` снаружи. Сервис читает/пишет свои поля в него:
+
+```csharp
+public void SaveServiceState(LocationServiceState stateMap)
+{
+    var snapshot = _logic.GetSnapshot();
+    stateMap.CurrentLocationId = snapshot.CurrentLocationId;
+    stateMap.LocationHistory   = snapshot.LocationHistory;
+    stateMap.ConsumedItemIds   = snapshot.ConsumedItemIds;
+}
+
+public UniTask LoadServiceState(LocationServiceState stateMap)
+{
+    _logic.LoadSnapshot(new LocationLogicSnapshot(
+        stateMap.CurrentLocationId,
+        stateMap.LocationHistory   ?? Array.Empty<string>(),
+        stateMap.ConsumedItemIds   ?? Array.Empty<string>()));
+    return UniTask.CompletedTask;
+}
+```
+
+`IStatefulService<T>` уже включает `IEngineService` — объявлять его отдельно не нужно.
 
 ### Что сохраняется
 Каждый модуль документирует свой `State` самостоятельно:
