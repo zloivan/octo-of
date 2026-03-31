@@ -2,6 +2,9 @@
 @back id:MainBackground appearance:test
 ;@back id:VideoBackground appearance:test
 ;@wait 2
+
+@enterLocation locationId:test_location
+@enterLocation locationId:test_location_2
 ;@back id:VideoBackground appearance:test
 @stop
 ;19.2 10.8 остальные вот такие bounds

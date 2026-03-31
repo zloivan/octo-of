@@ -7,8 +7,6 @@ namespace Locations.Domain
     public class LocationLogic
     {
         private LocationData _currentLocation;
-        private bool _canGoBack;
-        private string _currentLocationId;
         private Stack<string> _locationHistoryStack = new();
         private HashSet<string> _consumedItemIdSet = new();
         private readonly LocationData[] _locationsArray;
@@ -19,21 +17,24 @@ namespace Locations.Domain
 
         public void Enter(string locationId)
         {
-            _currentLocationId = locationId;
+            _currentLocation = GetLocation(locationId);
             _locationHistoryStack.Push(locationId);
         }
 
         public void GoBack()
         {
-            if (_locationHistoryStack.Count > 1)
-                _locationHistoryStack.Pop();
+            if (!CanGoBack())
+                return;
+            
+            _locationHistoryStack.Pop();
+            _currentLocation = GetLocation(_locationHistoryStack.Peek());
         }
 
         public LocationData GetCurrentLocation() =>
             _currentLocation;
 
         public bool CanGoBack() =>
-            _canGoBack;
+            _locationHistoryStack.Count > 1;
 
         public LocationData GetLocation(string locationId)
         {
@@ -59,25 +60,25 @@ namespace Locations.Domain
             _consumedItemIdSet.Contains(itemId);
 
         public LocationLogicSnapshot GetSnapshot() =>
-            new(_currentLocationId, _locationHistoryStack.ToArray(), _consumedItemIdSet.ToArray());
+            new(_currentLocation.Id, _locationHistoryStack.ToArray(), _consumedItemIdSet.ToArray());
 
 
         public void LoadSnapshot(LocationLogicSnapshot snapshot)
         {
-            _currentLocationId = snapshot.CurrentLocationId;
+            _currentLocation = GetLocation(snapshot.CurrentLocationId);
             _locationHistoryStack = new Stack<string>(snapshot.LocationHistory);
             _consumedItemIdSet = new HashSet<string>(snapshot.ConsumedItemIds);
         }
 
         public void Reset()
         {
-            _currentLocationId = null;
+            _currentLocation = null;
             _locationHistoryStack.Clear();
             _consumedItemIdSet.Clear();
         }
 
         public override string ToString() =>
-            $"LocationLogic(CurrentLocationId={_currentLocationId}, LocationHistory={_locationHistoryStack.Count}, ConsumedItemIds={_consumedItemIdSet.Count})";
+            $"LocationLogic(CurrentLocationId={_currentLocation?.Id}, LocationHistory={_locationHistoryStack.Count}, ConsumedItemIds={_consumedItemIdSet.Count})";
     }
 
     public readonly struct LocationLogicSnapshot

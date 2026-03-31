@@ -67,7 +67,7 @@ namespace Locations
         {
             _logic.Enter(locationId);
             OnLocationEntered?.Invoke(_logic.GetCurrentLocation());
-            OFLogger.Log($"LocationService entered {locationId}");
+            OFLogger.Log($"LocationService entered {_logic.GetCurrentLocation().Id}");
         }
 
         public void OnItemClicked(string itemId)
@@ -78,9 +78,15 @@ namespace Locations
 
         public void GoBack()
         {
+            if (!_logic.CanGoBack())
+            {
+                OFLogger.Log("LocationService can't go back");
+                return;
+            }
+
             _logic.GoBack();
             OnLocationEntered?.Invoke(_logic.GetCurrentLocation());
-            OFLogger.Log("LocationService go back");
+            OFLogger.Log($"LocationService go back to: {_logic.GetCurrentLocation().Id}");
         }
     }
 }

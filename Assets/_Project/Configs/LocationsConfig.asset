@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: LocationsConfig
   m_EditorClassIdentifier: 
   Locations:
-  - Id: home
+  - Id: test_location
     VideoRef:
       m_AssetGUID: cb61671860b9349088e45382ef8d6421
       m_SubObjectName: Day1_static6_1_0
@@ -49,3 +49,21 @@ MonoBehaviour:
         m_SubObjectType: 
         m_SubObjectGUID: 
         m_EditorAssetChanged: 0
+  - Id: test_location_2
+    VideoRef:
+      m_AssetGUID: cb61671860b9349088e45382ef8d6421
+      m_SubObjectName: Day1_static6_1_0
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 1
+    HotspotPrefabRef:
+      m_AssetGUID: a7abd4fe88084440ab78255c406976f3
+      m_SubObjectName: Green-sprite_0
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 1
+    OnEnterScript: 
+    HasBackButton: 1
+    Hotspots: []
