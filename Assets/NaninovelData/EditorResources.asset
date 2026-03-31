@@ -144,8 +144,21 @@ MonoBehaviour:
     - name: ScriptNavigatorUI
       pathPrefix: UI
       guid: 735d6aa767879aa469134858c5b2f0a7
+    - name: CustomUI
+      pathPrefix: UI
+      guid: 0cfee5121fff74a6db6026e4bf369b34
   - Id: Scripts
     Resources:
     - name: Test
       pathPrefix: Scripts
       guid: a64e6a490f16f4796932035418db5376
+  - Id: Backgrounds/34e695bc-5c24-4983-91f0-2a139bb249f2
+    Resources:
+    - name: test
+      pathPrefix: Backgrounds/MainBackground
+      guid: cb61671860b9349088e45382ef8d6421
+  - Id: Backgrounds/5593fbf7-d632-453a-a5e7-08d3de24448c
+    Resources:
+    - name: test
+      pathPrefix: Backgrounds/VideoBackground
+      guid: 9fd9ea5e5128b4977b52e1ab66fd1dd6
