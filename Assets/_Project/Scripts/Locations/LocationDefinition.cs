@@ -16,12 +16,6 @@ namespace Locations
         public HotspotEntry[] Hotspots;
 
         public LocationData ToLocationData() =>
-            new()
-            {
-                Id = Id,
-                OnEnterScript = OnEnterScript,
-                HasBackButton = HasBackButton,
-                Hotspots = Hotspots.Select(h => h.GetHotspotData()).ToArray()
-            };
+            new(Id, OnEnterScript, HasBackButton, Hotspots.Select(h => h.GetHotspotData()).ToArray());
     }
 }

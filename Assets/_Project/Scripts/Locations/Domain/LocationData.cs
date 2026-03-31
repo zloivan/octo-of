@@ -1,13 +1,18 @@
-using System;
-
 namespace Locations.Domain
 {
-    [Serializable]
-    public class LocationData
+    public sealed class LocationData
     {
-        public string Id;
-        public string OnEnterScript;
-        public bool HasBackButton;
-        public HotspotData[] Hotspots;
+        public readonly string Id;
+        public readonly string OnEnterScript;
+        public readonly bool HasBackButton;
+        public readonly HotspotData[] Hotspots;
+
+        public LocationData(string id, string onEnterScript, bool hasBackButton, HotspotData[] hotspots)
+        {
+            Id = id;
+            OnEnterScript = onEnterScript;
+            HasBackButton = hasBackButton;
+            Hotspots = hotspots;
+        }
     }
 }

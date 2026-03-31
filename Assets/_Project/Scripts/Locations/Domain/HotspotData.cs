@@ -9,5 +9,6 @@ namespace Locations.Domain
         public HotspotType Type;
         public ActivationCondition Condition;
         public string ConditionValue;
+        public string TargetLocationId; 
     }
 }

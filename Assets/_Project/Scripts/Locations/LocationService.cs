@@ -1,47 +1,80 @@
 using System;
+using System.Linq;
 using Locations.Domain;
 using Naninovel;
-using UnityEngine;
+using Utilities;
 
 namespace Locations
 {
     public class LocationService : IStatefulService<LocationServiceState>
     {
         public event Action<LocationData> OnLocationEntered;
-        
+
+        private LocationConfigSO _config;
+        private LocationLogic _logic;
+
         public UniTask InitializeService()
         {
-            Debug.Log("LocationService initialized");
+            var data = _config.Locations.Select(l => l.ToLocationData()).ToArray();
+            _logic = new LocationLogic(data);
+
+            OFLogger.Log($"LocationService initialized with {data.Length} locations");
             return UniTask.CompletedTask;
         }
 
 
         public void ResetService()
         {
-            Debug.Log("LocationService reset");
+            _logic.Reset();
+            OFLogger.Log("LocationService reset");
         }
 
         public void DestroyService()
         {
-            Debug.Log("LocationService destroyed");
+            OFLogger.Log("LocationService destroyed");
         }
 
         public void SaveServiceState(LocationServiceState stateMap)
         {
-            Debug.Log("LocationService saved");
+            var snapshot = _logic.GetSnapshot();
+
+            stateMap.CurrentLocationId = snapshot.CurrentLocationId;
+            stateMap.LocationHistoryArray = snapshot.LocationHistory;
+            stateMap.ConsumedItemsIdArray = snapshot.ConsumedItemIds;
+
+
+            OFLogger.Log("LocationService saved");
         }
 
-        public UniTask LoadServiceState(LocationServiceState stateMap) =>
-            UniTask.CompletedTask;
+        public UniTask LoadServiceState(LocationServiceState stateMap)
+        {
+            _logic.LoadSnapshot(new LocationLogicSnapshot(
+                stateMap.CurrentLocationId,
+                stateMap.LocationHistoryArray ?? Array.Empty<string>(),
+                stateMap.ConsumedItemsIdArray ?? Array.Empty<string>()));
+            
+            OFLogger.Log("LocationService loaded");
+            return UniTask.CompletedTask;
+        }
 
         public void Enter(string locationId)
         {
-            Debug.Log($"LocationService entered {locationId}");
+            _logic.Enter(locationId);
+            OnLocationEntered?.Invoke(_logic.GetCurrentLocation());
+            OFLogger.Log($"LocationService entered {locationId}");
         }
 
         public void OnItemClicked(string itemId)
         {
-            Debug.Log($"LocationService item clicked {itemId}");
+            _logic.MarkConsumed(itemId);
+            OFLogger.Log($"LocationService item clicked {itemId}");
+        }
+
+        public void GoBack()
+        {
+            _logic.GoBack();
+            OnLocationEntered?.Invoke(_logic.GetCurrentLocation());
+            OFLogger.Log("LocationService go back");
         }
     }
 }
