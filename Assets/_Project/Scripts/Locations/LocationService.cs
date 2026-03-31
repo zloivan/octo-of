@@ -1,24 +1,30 @@
 using System;
 using System.Linq;
+using Core;
 using Locations.Domain;
 using Naninovel;
 using Utilities;
 
 namespace Locations
 {
+    [InitializeAtRuntime]
     public class LocationService : IStatefulService<LocationServiceState>
     {
         public event Action<LocationData> OnLocationEntered;
 
-        private LocationConfigSO _config;
+        private readonly LocationConfigSO _config;
         private LocationLogic _logic;
+
+        public LocationService(GameConfig gameConfig) =>
+            _config = gameConfig.LocationConfig;
 
         public UniTask InitializeService()
         {
             var data = _config.Locations.Select(l => l.ToLocationData()).ToArray();
             _logic = new LocationLogic(data);
 
-            OFLogger.Log($"LocationService initialized with {data.Length} locations");
+            OFLogger.Log(
+                $"LocationService initialized with [{data.Length} ]locations: [{string.Join(", ", data.Select(d => d.ToString()))}] ");
             return UniTask.CompletedTask;
         }
 
@@ -52,7 +58,7 @@ namespace Locations
                 stateMap.CurrentLocationId,
                 stateMap.LocationHistoryArray ?? Array.Empty<string>(),
                 stateMap.ConsumedItemsIdArray ?? Array.Empty<string>()));
-            
+
             OFLogger.Log("LocationService loaded");
             return UniTask.CompletedTask;
         }

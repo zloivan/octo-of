@@ -75,6 +75,9 @@ namespace Locations.Domain
             _locationHistoryStack.Clear();
             _consumedItemIdSet.Clear();
         }
+
+        public override string ToString() =>
+            $"LocationLogic(CurrentLocationId={_currentLocationId}, LocationHistory={_locationHistoryStack.Count}, ConsumedItemIds={_consumedItemIdSet.Count})";
     }
 
     public readonly struct LocationLogicSnapshot

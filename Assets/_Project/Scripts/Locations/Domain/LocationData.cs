@@ -14,5 +14,8 @@ namespace Locations.Domain
             HasBackButton = hasBackButton;
             Hotspots = hotspots;
         }
+        public override string ToString() =>
+            $"LocationData(Id={Id}, OnEnterScript={OnEnterScript}, HasBackButton={HasBackButton}, Hotspots={Hotspots.Length})";        
+        
     }
 }

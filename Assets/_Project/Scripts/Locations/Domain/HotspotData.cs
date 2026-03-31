@@ -9,6 +9,9 @@ namespace Locations.Domain
         public HotspotType Type;
         public ActivationCondition Condition;
         public string ConditionValue;
-        public string TargetLocationId; 
+        public string TargetLocationId;
+        
+        public override string ToString() =>
+            $"HotspotData(Id={Id}, Type={Type}, Condition={Condition}, ConditionValue={ConditionValue}, TargetLocationId={TargetLocationId})";
     }
 }
