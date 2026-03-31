@@ -2,7 +2,7 @@ using System.Threading;
 using Naninovel;
 using UnityEngine;
 
-namespace OnlyFarms.Tests
+namespace Tests
 {
     public class SpikeHotspotPlacement : MonoBehaviour
     {

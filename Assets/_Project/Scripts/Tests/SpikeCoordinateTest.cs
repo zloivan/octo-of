@@ -1,7 +1,7 @@
 using Naninovel;
 using UnityEngine;
 
-namespace OnlyFarms.Tests
+namespace Tests
 {
     public class SpikeCoordinateTest : MonoBehaviour
     {

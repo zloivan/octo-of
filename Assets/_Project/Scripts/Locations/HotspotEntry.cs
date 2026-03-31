@@ -1,7 +1,8 @@
 using System;
+using Locations.Domain;
 using UnityEngine.AddressableAssets;
 
-namespace OnlyFarms.Locations
+namespace Locations
 {
     [Serializable]
     public class HotspotEntry
@@ -13,5 +14,14 @@ namespace OnlyFarms.Locations
         public ActivationCondition Condition;
         public string ConditionValue;//TODO: String identifier not good
         public AssetReference ItemConfig;
+
+        public HotspotData GetHotspotData() =>
+            new()
+            {
+                Id = Id,
+                Type = Type,
+                Condition = Condition,
+                ConditionValue = ConditionValue
+            };
     }
 }

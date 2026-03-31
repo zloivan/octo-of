@@ -1,7 +1,7 @@
 using Naninovel.UI;
 using UnityEngine;
 
-namespace OnlyFarms.Tests
+namespace Tests
 {
     public class SpikeOverlayUI : CustomUI
     {

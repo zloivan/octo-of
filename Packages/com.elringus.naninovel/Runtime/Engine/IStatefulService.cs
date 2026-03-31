@@ -5,7 +5,7 @@ namespace Naninovel
     /// Implementation represents a <see cref="IEngineService"/> that has a persistent 
     /// state and is able to save/load it using <typeparamref name="TState"/>.
     /// </summary>
-    public interface IStatefulService<TState> : IEngineService where TState : StateMap
+    public interface IStatefulService<TState> : IEngineService
     {
         /// <summary>
         /// Serializes service state via <see cref="StateMap.SetState{TState}(TState, string)"/>.
