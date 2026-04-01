@@ -1,7 +1,7 @@
 # Архитектура — Система квестов
 
 > Покрывает: QuestLogic, QuestService, UI, конфиг, команды, ReportEvent, возврат в нарратив, SFX.
-> Внешние зависимости: `LocationService` (вызывает ReportEvent), `StartMiniGameCommand` (вызывает ReportEvent), `AttSusDelta` из [`architecture_scales.md`](architecture_scales.md)
+> Внешние зависимости: `LocationService` (ReportEvent), `StartMiniGameCommand` (ReportEvent)
 > Индекс: [`architecture_index.md`](architecture_index.md) | Ядро: [`architecture_core.md`](architecture_core.md)
 
 ---
@@ -9,42 +9,36 @@
 ## 13. Система квестов
 
 ### 13.1 Контекст
-Квесты выдаются в сегментах свободного перемещения. Каждый квест состоит из объективов. Выполнение объектива происходит через `ReportEvent` когда игрок взаимодействует с миром. При выполнении всех объективов — квест завершён. При выполнении всех квестов дня — возврат в нарратив.
+
+Квесты выдаются в сегментах свободного перемещения. Каждый квест состоит из объективов. Выполнение объектива — через `ReportEvent`. При выполнении всех квестов дня — `QuestService` сигнализирует `OnAllQuestsCompleted`, что разблокирует `@exitNarrative` и возвращает управление нарративному скрипту.
 
 ### 13.2 Конфиг
 
 ```
 QuestConfig : ScriptableObject
   └── QuestDefinition[]
-        ├── id: string                    ← "find_diary", "complete_minigame_grace"
+        ├── id: string
         ├── localizationKey: string
-        ├── isOrdered: bool               ← если true — квесты дня выдаются последовательно
-        ├── day: string                   ← "day1", "day2"
+        ├── isOrdered: bool
+        ├── day: string
         └── objectives: ObjectiveDefinition[]
-              ├── id: string              ← "find_page_1", "find_page_2"
-              ├── objectiveTag: string    ← тег ReportEvent ("diary_page", "play_minigame_shooting")
+              ├── id: string
+              ├── objectiveTag: string
               ├── targetCount: int
-              └── rewardDelta: AttSusDelta  ← опционально; тип из architecture_scales.md
+              └── rewardDelta: AttSusDelta  ← опционально
 ```
-
-Отдельного объекта "завершённого квеста" нет. Завершённость — "все объективы выполнены".
 
 ### 13.3 QuestLogic (plain C#)
 
 ```csharp
 public class QuestLogic
 {
-    private QuestDefinition _definition;
-    private ObjectiveProgress[] _progress;
-
-    public void Initialize(QuestDefinition def) { /* ... */ }
-
-    public bool ReportEvent(string objectiveTag) { /* ... */ }  // true если объектив завершён
-
+    public void Initialize(QuestDefinition def) { }
+    public bool ReportEvent(string objectiveTag) { } // true если объектив завершён
     public bool IsCompleted => Array.TrueForAll(_progress, p => p.IsCompleted);
     public ObjectiveProgress[] GetProgress() => _progress;
 
-    public event Action<string> OnObjectiveCompleted;  // objectiveId
+    public event Action<string> OnObjectiveCompleted; // objectiveId
     public event Action OnQuestCompleted;
 }
 ```
@@ -54,9 +48,7 @@ public class QuestLogic
 ```
 QuestLogic (plain C#)
         ↑
-QuestService : IEngineService<QuestService.State>,
-               IStatefulService<QuestService.State>,
-               IQuestEventReporter
+QuestService : IEngineService, IStatefulService<State>, IQuestEventReporter
         ↑
 Naninovel Commands (§13.6)
 ```
@@ -69,19 +61,21 @@ public interface IQuestEventReporter
 }
 ```
 
-**Событие для UI-слоя:**
+**События:**
 ```csharp
-// QuestService публикует это событие при добавлении каждого нового активного квеста.
-// QuestPanelUI подписывается на него и получает QuestLogic для привязки к QuestEntryView.
+// UI-слой подписывается для отображения квестов
 public event Action<QuestLogic> OnQuestAdded;
+
+// ExitNarrativeCommand awaits этот UniTask
+public UniTask WaitForAllQuestsCompleted(CancellationToken ct);
 ```
 
-`QuestService` является единственным владельцем списка `QuestLogic` инстансов. Views не хранят логику — они только получают её по ссылке через `Bind()`.
+`WaitForAllQuestsCompleted` — возвращает уже завершённый `UniTask` если активных квестов нет, иначе ждёт последнего `OnQuestCompleted`.
 
 **Последовательная выдача (`isOrdered`):**
-Если `isOrdered = true` — сервис держит очередь, активирует по одному. При `OnQuestCompleted` dequeue следующий, создаёт `QuestLogic`, вызывает `OnQuestAdded`. Если `isOrdered = false` — все квесты дня активируются сразу при `@activateDayQuests`.
+Если `isOrdered=true` — активируется по одному. При `OnQuestCompleted` — dequeue следующий → `OnQuestAdded`. Если `false` — все сразу при `@activateDayQuests`.
 
-**State (Persistence):**
+**State:**
 ```csharp
 [System.Serializable]
 public class State
@@ -90,36 +84,18 @@ public class State
     public string[] CompletedQuestIds;
     public string[] PendingOrderedQuestIds;
 }
-
-[System.Serializable]
-public class ActiveQuestSnapshot
-{
-    public string QuestId;
-    public ObjectiveProgressSnapshot[] Objectives;
-}
-
-[System.Serializable]
-public class ObjectiveProgressSnapshot
-{
-    public string ObjectiveId;
-    public int CurrentCount;
-}
 ```
 
 ### 13.5 UI — QuestPanelUI и QuestEntryView
 
-`QuestPanelUI : CustomUI` — живёт в Naninovel Custom UI Layer.
-
+`QuestPanelUI : CustomUI` — в Naninovel Custom UI Layer.
 - Подписана на `QuestService.OnQuestAdded(QuestLogic logic)`
-- При событии: инстанциирует `QuestEntryView` в ScrollView, вызывает `entryView.Bind(logic)`
-- Уничтожение view — автоматически по `OnQuestCompleted` внутри самого view
+- Инстанциирует `QuestEntryView`, вызывает `entryView.Bind(logic)`
 
 `QuestEntryView : MonoBehaviour`:
-- Поля: Quest Title (ManagedTextProvider), Progress Text ("1/2"), Progress Bar (Slider)
-- `Bind(QuestLogic logic)` — подписывается на `logic.OnObjectiveCompleted` → `AnimateProgress()`; на `logic.OnQuestCompleted` → fade out + `quest_crossed` + `Destroy`
-- Не хранит ссылку на сервис — только на переданный `QuestLogic`
+- `Bind(QuestLogic logic)` — подписывается на `logic.OnObjectiveCompleted` → анимирует прогресс; на `logic.OnQuestCompleted` → fade out + `quest_crossed` + `Destroy`
+- Не хранит ссылку на сервис
 
-**Цепочка владения:**
 ```
 QuestService (владеет QuestLogic[])
     → OnQuestAdded(logic) →
@@ -128,71 +104,76 @@ QuestPanelUI (инстанциирует QuestEntryView)
 QuestEntryView (подписывается на logic.On*)
 ```
 
-### 13.6 Команды и Bootstrapper
-
-```csharp
-.AddEngineService<QuestService>(questConfig)
-.RegisterCommand<ActivateDayQuestsCommand>()    // @activateDayQuests day:day1
-.RegisterCommand<StartFreeRoamCommand>()        // @startFreeRoam returnScript:Day1_End
-.RegisterCommand<AddQuestCommand>()             // @addQuest id:find_diary
-```
-
-### В .nani скриптах
-```
-@activateDayQuests day:day2
-@startFreeRoam returnScript:Day2_Sc3
-@addQuest id:bonus_quest
-```
+### 13.6 Команды
 
 | Команда | Параметры | Действие |
 |---|---|---|
 | `@activateDayQuests` | `day:day1` | Инициализирует квесты дня. `isOrdered` → только первый; иначе все сразу |
-| `@startFreeRoam` | `returnScript:Day1_End` | Переводит в свободное перемещение, сохраняет returnScript |
+| `@exitNarrative` | `id:backyard` (опц.) | Входит в свободное перемещение, ждёт `WaitForAllQuestsCompleted` |
 | `@addQuest` | `id:find_diary` | Добавляет одиночный квест динамически |
 
-Все команды — синхронные (структурно просты).
+**ExitNarrativeCommand** — блокирующая команда, центральный механизм перехода между нарративом и свободным перемещением:
 
-### 13.7 Интеграция ReportEvent
-
-**Из LocationService** при клике по предмету:
 ```csharp
-public void OnInteractableItemClicked(string itemId) {
-    // Инициализация мини-игры / воспроизведение события / и т.д.
+[CommandAlias("exitNarrative")]
+public class ExitNarrativeCommand : Command
+{
+    public StringParameter Id; // опциональный locationId
 
-    // После выполнения действия — сообщаем квестам
-    var eventReporter = Engine.GetService<IQuestEventReporter>();
-    var itemConfig = _itemConfigMap[itemId];
-    eventReporter.ReportEvent(itemConfig.objectiveTag);
+    public override async UniTask ExecuteAsync(AsyncToken asyncToken = default)
+    {
+        var locationService = Engine.GetService<LocationService>();
+        var questService = Engine.GetService<QuestService>();
+
+        // Войти на локацию (или остаться на текущей)
+        var locationId = Id.HasValue ? Id.Value : locationService.CurrentLocationId;
+        await locationService.Enter(locationId, asyncToken.CancellationToken);
+
+        // Ждём выполнения всех квестов дня — здесь блокируется скрипт
+        await questService.WaitForAllQuestsCompleted(asyncToken.CancellationToken);
+
+        // Возврат в нарратив — скрипт продолжается
+    }
 }
 ```
 
-**Из StartMiniGameCommand** при завершении мини-игры:
+### В .nani скриптах
+
+```
+; Стандартный флоу дня
+@activateDayQuests day:day1
+@exitNarrative id:backyard          ← блокирует до выполнения всех квестов
+
+; Динамически добавить квест по ходу повествования
+@addQuest id:bonus_quest
+
+; Войти в свободное перемещение и вернуть на последнюю локацию
+@exitNarrative
+```
+
+### 13.7 Интеграция ReportEvent
+
+**Из LocationService** (клик по предмету):
 ```csharp
-var result = await miniGameService.RunAsync(id);
+Engine.GetService<IQuestEventReporter>()?.ReportEvent(itemConfig.objectiveTag);
+```
 
-// ReportEvent вызывается ВСЕГДА — вне зависимости от победы или поражения.
-// ГДД: "пункт засчитывается после завершения мини-игры, вне зависимости от результата."
-var eventReporter = Engine.GetService<IQuestEventReporter>();
-eventReporter.ReportEvent($"play_minigame_{id}");
-
-// Шкалы — только при победе (см. architecture_scales.md §16.5)
-if (result.IsVictory)
-    SeductionScaleService.ApplyMiniGameResult(char, isVictory: true);
-else
-    SeductionScaleService.ApplyMiniGameResult(char, isVictory: false);
+**Из StartMiniGameCommand** (завершение мини-игры):
+```csharp
+// ReportEvent — ВСЕГДА, независимо от победы
+Engine.GetService<IQuestEventReporter>()?.ReportEvent($"play_minigame_{id}");
 ```
 
 ### 13.8 Возврат в нарратив
 
-```csharp
-// QuestService слушает OnQuestCompleted для каждого активного квеста
-// Когда последний квест завершён:
-public void CheckAllQuestsCompleted() {
-    if (_activeQuests.All(q => q.IsCompleted)) {
-        _returnCommand?.Invoke();  // Вызов @goto returnScript который был сохранён в @startFreeRoam
-    }
-}
-```
+Механизм — `QuestService.WaitForAllQuestsCompleted()`, который awaits `ExitNarrativeCommand`. При завершении последнего квеста:
+
+1. `QuestLogic.OnQuestCompleted` → `QuestService.CheckAllCompleted()`
+2. Все активные квесты завершены → `QuestService` резолвит `UniTask`
+3. `@exitNarrative` разблокируется → скрипт дня продолжается
+4. Воспроизводится `quest_completed`
+
+Нет отдельного `returnScript`, нет `@goto`. Нарративный скрипт просто продолжает следующую строку.
 
 ---
 
@@ -200,6 +181,6 @@ public void CheckAllQuestsCompleted() {
 
 | Ключ | Момент | Приоритет |
 |---|---|---|
-| `quest_ticked` | Выполнение одного действия внутри составного квеста | Med |
-| `quest_crossed` | Выполнение квеста (все действия завершены) | High |
-| `quest_completed` | Выполнение последнего квеста дня → возврат в нарратив | High |
+| `quest_ticked` | Выполнение одного действия составного квеста | Med |
+| `quest_crossed` | Выполнение квеста | High |
+| `quest_completed` | Выполнение последнего квеста дня | High |

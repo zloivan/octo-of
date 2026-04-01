@@ -9,107 +9,100 @@
 ## 5. Архитектура сервисов (Naninovel DI)
 
 ### Принцип
-Всё через Naninovel DI. Никаких параллельных систем и своих обёрток над Naninovel.
+
+Сервисы регистрируются через Naninovel DI (`[InitializeAtRuntime]`). Допустимы целенаправленные обёртки над Naninovel-сервисами когда они решают конкретную проблему и не дублируют существующую функциональность.
+
+> **Пример допустимой обёртки:** `LocationService` использует `IBackgroundManager` для управления фоном локаций через выделенный actor (`id: "location"`). Нарративный `@back` работает с другими акторами и никогда не трогает `"location"`.
 
 ```
 LocationLogic (plain C#)              ← доменная логика, runtime-состояние
         ↑
 LocationService : IStatefulService    ← Naninovel lifecycle, тонкий фасад
         ↑
-EnterLocationCommand : Command        ← @enterLocation id:backyard в .nani
+ExitNarrativeCommand : Command        ← @exitNarrative id:backyard в .nani
 ```
 
 ### Регистрация сервисов
-Каждый кастомный сервис регистрируется атрибутом `[InitializeAtRuntime]` — Naninovel находит и инициализирует его автоматически:
 
 ```csharp
 [InitializeAtRuntime]
 public class LocationService : IStatefulService<LocationServiceState>
 {
-    public LocationService(GameConfig gameConfig) { ... }
+    public LocationService(GameConfig gameConfig, IBackgroundManager backgroundManager,
+                           ICameraManager cameraManager) { ... }
 }
 ```
 
-Порядок инициализации определяется топологически по конструкторным зависимостям — если `LocationService` принимает `GameConfig` в конструкторе, Naninovel гарантирует что `GameConfig` будет готов раньше.
-
-Кастомные команды Naninovel находит автоматически через рефлексию — отдельной регистрации не требуют.
+Порядок инициализации — топологически по конструкторным зависимостям. Команды находятся через рефлексию.
 
 ### Конфигурация — GameConfig
-
-Единый корневой конфиг проекта. Наследует `Configuration` — Naninovel инжектирует его в конструкторы сервисов автоматически.
 
 ```csharp
 [EditInProjectSettings]
 public class GameConfig : Configuration
 {
     public LocationConfigSO LocationConfig;
-    // QuestConfigSO QuestConfig;
-    // ScaleConfigSO ScaleConfig;
+    // QuestConfigSO QuestConfig;     — добавляется в Эпике 2
+    // ScaleConfigSO ScaleConfig;     — добавляется в Эпике 3
 }
 ```
 
-`LocationConfigSO`, `QuestConfigSO` и т.д. — обычные `ScriptableObject`. Ссылки на них настраиваются через `Naninovel → Configuration → GameConfig` в редакторе.
-
-Asset хранится в `NaninovelData/Resources/Naninovel/Configuration/GameConfig.asset` — генерируется автоматически при первом открытии меню.
-
 ### Доступ из любой точки
+
 ```csharp
-// Из другого сервиса или команды
-Engine.GetService<LocationService>().Enter("backyard");
+Engine.GetService<LocationService>().Enter("backyard", ct);
 ```
 
-### Почему не @goto или встроенные команды Naninovel для смены локации
-`@goto` управляет нарративным скриптом, не игровым состоянием. Смена локации — это игровое состояние (активные хотспоты, условия, история переходов). Это должно жить в `LocationService`.
+### Почему нарративный скрипт — арбитр флоу
+
+`@exitNarrative` — блокирующая команда. Скрипт дня (`day_01.nani`) содержит полный флоу: нарратив → свободное перемещение → нарратив. Нет отдельного координатора — дизайнер видит весь день в одном файле.
+
+```
+; day_01.nani
+; ... нарратив ...
+@activateDayQuests day:day1
+@exitNarrative id:backyard      ← блокирует до выполнения всех квестов дня
+; ... нарратив продолжается ...
+```
 
 ---
 
 ## 8. Слой представления (View / UI)
 
 ### Принцип
+
 Views — passive objects. Они не знают о логике, не кэшируют состояние. Они только:
-- Экспонируют callbacks и Actions (по одному callback на action)
-- Обновляют визуальное состояние через метод (e.g., `SetScore(int score)`)
+- Экспонируют callbacks и Actions
+- Обновляют визуальное состояние через метод (`SetScore(int score)`)
 - Генерируют события через Action<> поля
 
 ### Пример: HotspotView
+
 ```csharp
 public class HotspotView : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
-    public string id;
+    public string Id;
     public Action OnHoverEnter;
     public Action OnHoverExit;
     public Action OnClicked;
 
-    // View не кэширует состояние "выбран ли" или "заблокирован ли"
-    // Это узнаёт контроллер и вызывает View.SetActive() / SetColor() / SetInteractable()
-
-    public void SetBrightness(float value) { /* ... */ }
-    public void SetInteractable(bool value) { /* ... */ }
+    public void SetBrightness(float value) { /* MaterialPropertyBlock */ }
+    public void SetInteractable(bool value) { /* collider.enabled */ }
 }
 ```
 
-### Зависимости View: только UI компоненты (Button, Slider, Text и т.д.)
-Никогда не кэшируем сервисы, не вызываем бизнес-логику, не подписываемся на события модели.
+### Контроллер (Presenter)
 
-### Контроллер (Application Controller / Presenter)
-Контроллер — это C# компонент (MonoBehaviour), который:
 1. Держит ссылку на View
 2. Подписывается на события View
-3. Вызывает сервисы в ответ на события View
-4. Подписывается на события сервиса
-5. Обновляет View на основе событий сервиса
-
-Контроллер создаётся как часть сцены или регистрируется через Naninovel Custom UI.
+3. Вызывает сервисы в ответ
+4. Обновляет View по событиям сервиса
 
 ---
 
 ## 9. Persistence (Save/Load)
 
-### Принцип
-Каждый stateful сервис реализует `IStatefulService<TState>`:
-
 ```csharp
-// Реальный интерфейс Naninovel 1.20
 public interface IStatefulService<TState> : IEngineService
 {
     void SaveServiceState(TState stateMap);
@@ -117,147 +110,95 @@ public interface IStatefulService<TState> : IEngineService
 }
 ```
 
-Naninovel передаёт `stateMap` снаружи. Сервис читает/пишет свои поля в него:
+### Save/Load при @exitNarrative
 
-```csharp
-public void SaveServiceState(LocationServiceState stateMap)
-{
-    var snapshot = _logic.GetSnapshot();
-    stateMap.CurrentLocationId = snapshot.CurrentLocationId;
-    stateMap.LocationHistory   = snapshot.LocationHistory;
-    stateMap.ConsumedItemIds   = snapshot.ConsumedItemIds;
-}
-
-public UniTask LoadServiceState(LocationServiceState stateMap)
-{
-    _logic.LoadSnapshot(new LocationLogicSnapshot(
-        stateMap.CurrentLocationId,
-        stateMap.LocationHistory   ?? Array.Empty<string>(),
-        stateMap.ConsumedItemIds   ?? Array.Empty<string>()));
-    return UniTask.CompletedTask;
-}
-```
-
-`IStatefulService<T>` уже включает `IEngineService` — объявлять его отдельно не нужно.
-
-### Что сохраняется
-Каждый модуль документирует свой `State` самостоятельно:
-- `LocationService.State` — см. [`architecture_locations.md`](architecture_locations.md)
-- `QuestService.State` — см. [`architecture_quests.md`](architecture_quests.md)
-- `SeductionScaleService.State` — см. [`architecture_scales.md`](architecture_scales.md)
-- `MiniGameService.State` — см. [`architecture_minigames.md`](architecture_minigames.md)
+- `IsInFreeRoam = true` сохраняется в `LocationServiceState`
+- При загрузке: Naninovel восстанавливает строку скрипта → выполняет `@exitNarrative` повторно → `LocationService.Enter()` восстанавливает фон + хотспоты
 
 ### Что НЕ сохраняется
-- Transient UI state (position, visibility)
-- Какой элемент выбран (пересчитывается при загрузке локации)
-- Кэш ассетов — Addressables управляет самостоятельно
 
-### ResetService()
-Вызывается при начале новой игры. Вызывает `SetState(defaultState)` для каждого сервиса.
+- Transient UI state
+- Выбранный элемент (пересчитывается при загрузке)
+- Кэш ассетов (Addressables управляет)
 
-> **Исключение:** `MiniGameService.ResetService()` не сбрасывает State — рекорды и разблокировки персистентны между сессиями и сбросами состояния Naninovel. См. [`architecture_minigames.md`](architecture_minigames.md) §17.5.
+> **Исключение:** `MiniGameService` — рекорды персистентны между сбросами.
 
 ---
 
-## 10. Аудио (интеграция)
+## 10. Аудио
 
-### Структура
-`IAudioManager` — интерфейс, за реализацию отвечает фреймворк Naninovel (или кастомная обёртка).
-
-SFX-ключи распределены по модульным файлам — каждый модуль документирует свои ключи в секции `## 10. Аудио (фрагмент — ...)`.
-
-### Вызов из кода
 ```csharp
-// Где-то в LocationService
-AudioManager.PlaySfx("click_movement_forward");
-
-// Где-то в SeductionScaleService
-AudioManager.PlaySfx(_attractionDelta > 0 ? "scale_risky" : "scale_conscious");
+Engine.GetService<IAudioManager>().PlaySfxAsync("click_movement_forward");
 ```
+
+SFX-ключи — в модульных файлах каждой системы.
 
 ---
 
 ## 11. Асинхронность (UniTask)
 
-### Где используется
-- **Команды** — `async/await` внутри `ExecuteAsync()`
-- **Загрузка ассетов** — `await Addressables.LoadAssetAsync(...)`
-- **Анимации UI** — coroutines через UniTask
+- Команды — `async/await` в `ExecuteAsync()`
+- Загрузка ассетов — `Addressables.LoadAssetAsync`
+- View-методы — синхронные
 
-### Где НЕ используется
-- Сервисы, хранящие состояние (LocationService, QuestService) — синхронные методы
-- View-методы (SetScore, SetActive) — синхронные
-
-### CancellationToken
 ```csharp
-public async UniTask<int> RunAsync(RectTransform container, CancellationToken ct)
+public override async UniTask ExecuteAsync(AsyncToken asyncToken = default)
 {
-    while (!ct.IsCancellationRequested)
-    {
-        // цикл игры
-    }
-    return _score;
+    await Engine.GetService<LocationService>()
+        .Enter(Id, asyncToken.CancellationToken);
+    // ждём выполнения всех квестов дня
+    await Engine.GetService<QuestService>()
+        .WaitForAllQuestsCompleted(asyncToken.CancellationToken);
 }
 ```
 
 ---
 
-## 12. Что НЕ делаем (слой архитектуры)
+## 12. Что НЕ делаем
 
 - Параллельные event bus'ы — только Naninovel Events
-- Синглтоны поверх DI — Naninovel управляет lifecycle
-- Прямые ссылки между сервисами `public OtherService other` — только `Engine.GetService<>()`
+- Синглтоны поверх DI
+- Прямые ссылки между сервисами — только `Engine.GetService<>()`
 - Кэш состояния в View
 - `GameObject.Find()` / `FindObjectOfType()` в runtime
 
 ---
 
-## 15. Сценарии использования (фичи на высоком уровне)
+## 15. Сценарии использования
 
-### Сценарий 1: Вход на локацию и клик по предмету
+### Сценарий 1: Флоу дня (нарратив → свободное перемещение → нарратив)
+
 ```
-Naninovel скрипт: @enterLocation id:backyard
-        ↓
-LocationService.Enter("backyard")
-        ↓
-Загружаем hotspotPrefabRef, инстанциируем в HotspotLayerUI
-        ↓
-HotspotLayerUI активирует нужные хотспоты по условиям
-(пропускает id из ConsumedItemIds — одноразовые предметы)
-        ↓
+day_01.nani:
+  @activateDayQuests day:day1      ← QuestService инициализирует квесты
+  @exitNarrative id:backyard       ← LocationService.Enter("backyard")
+                                      IsInFreeRoam = true
+                                      ждём QuestService.WaitForAllQuestsCompleted()
+  ; --- игрок в свободном перемещении ---
+  ; QuestService.OnAllQuestsCompleted срабатывает
+  ; @exitNarrative разблокируется
+  @back appearance:day1_evening    ← нарратив продолжается
+  ; ...
+```
+
+### Сценарий 2: Клик по предмету в свободном перемещении
+
+```
 Игрок кликает по предмету
-        ↓
-HotspotView.OnClicked → Контроллер → LocationService.OnItemClicked()
-        ↓
-Выполняем onClickScript (Naninovel скрипт из InteractableItemConfig)
-Добавляем itemId в ConsumedItemIds
-        ↓
-Во время выполнения скрипта может быть @startMiniGame или диалог с выборами (@choiceEx)
-        ↓
-Скрипт завершается, игрок снова видит локацию
+  → HotspotView.OnClicked → IHotspotInput → LocationService.OnItemClicked()
+  → _logic.MarkConsumed(itemId)
+  → HotspotManager.DeactivateHotspot(itemId)
+  → PlaySfx("click_object")
+  → если onClickScript задан: ScriptPlayer.PlayAsync() (нарратив внутри свободного перемещения)
+  → QuestService.ReportEvent(objectiveTag) — null-safe
 ```
 
-### Сценарий 2: Выполнение мини-игры и воздействие на квесты + шкалы
+### Сценарий 3: Save/Load в свободном перемещении
+
 ```
-Naninovel скрипт: @startMiniGame id:shooting char:grace
-        ↓
-StartMiniGameCommand.ExecuteAsync()
-        ↓
-MiniGameService.RunAsync(id="shooting")
-        ↓
-Загружаем mechanicPrefabRef, инстанциируем IMiniGame компонент
-        ↓
-Вызываем IMiniGame.Initialize(ShootingMiniGameConfig)
-        ↓
-Вызываем IMiniGame.RunAsync(container, ct) — ждём результата
-        ↓
-Игрок играет, получает score
-        ↓
-MiniGameService.RunAsync() возвращает MiniGameSessionResult
-        ↓
-StartMiniGameCommand:
-   - QuestService.ReportEvent("play_minigame_shooting") ← ВСЕГДА, независимо от победы
-   - SeductionScaleService.ApplyMiniGameResult(char, isVictory) ← по результату
-        ↓
-Скрипт продолжается (например, показывает реакцию персонажа)
+Игрок сохраняет → LocationServiceState: CurrentLocationId="backyard", IsInFreeRoam=true
+Игрок загружает → Naninovel восстанавливает строку @exitNarrative
+               → LocationService.Enter("backyard") — фон + хотспоты
+               → QuestService восстанавливает прогресс квестов
+               → WaitForAllQuestsCompleted() продолжает ждать
 ```

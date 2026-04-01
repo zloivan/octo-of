@@ -1,7 +1,7 @@
 # Архитектура — Локации и Хотспоты
 
-> Покрывает: рендеринг фона, хотспоты, активация, конфиги, команды, SFX, спайк масштабирования.
-> Внешние зависимости: `QuestService` (ReportEvent), `Engine.GetService<IQuestEventReporter>()`
+> Покрывает: рендеринг фона, хотспоты, активация, конфиги, команды, SFX.
+> Внешние зависимости: `QuestService` (ReportEvent, WaitForAllQuestsCompleted)
 > Индекс: [`architecture_index.md`](architecture_index.md) | Ядро: [`architecture_core.md`](architecture_core.md)
 
 ---
@@ -9,96 +9,152 @@
 ## 2. Рендеринг фона и слой хотспотов
 
 ### Решение
-Naninovel Background actor рендерит видео-фон. Поверх него — Naninovel **Custom UI** (`HotspotLayerUI`), зарегистрированный как стандартный CustomUI префаб.
+
+`LocationService` управляет фоном и хотспотами атомарно через единую команду `@exitNarrative`. Фон — выделенный Background actor `id: "location"` через `IBackgroundManager`. Хотспоты — независимый `HotspotContainer` в world space.
 
 ```
-Naninovel Canvas
-  ├── Background Layer   ← видео через Background actor
-  ├── Character Layer
-  ├── Text Printer Layer
-  └── Custom UI Layer    ← HotspotLayerUI живёт здесь
+; Единственная команда нарративщика для входа в свободное перемещение
+@exitNarrative id:backyard
 ```
 
-### Почему Custom UI, не отдельный Canvas
-Оба слоя в одном Canvas Naninovel → одно пространство координат → не могут разъехаться при смене разрешения.
+Нарративный `@back` работает с другими акторами — конфликта нет.
+
+### Иерархия в runtime
+
+```
+Scene (DontDestroyOnLoad)
+  ├── [Naninovel] Background "location"   ← управляется LocationService
+  ├── [Naninovel] Background "narrative"  ← управляется нарративными @back
+  └── HotspotContainer                    ← создаётся HotspotManager, z = -0.1f
+        ├── HotspotView_A
+        └── HotspotView_B
+```
+
+### Почему World Space, не Custom UI
+
+| Критерий | Custom UI (отклонено) | World Space (выбор) |
+|---|---|---|
+| `PolygonCollider2D` | Не работает с `GraphicRaycaster` | Работает с `Physics2DRaycaster` |
+| Coordinate conversion | Ломается при crop | Не нужна |
+
+`Physics2DRaycaster` — на `MainCamera`, добавляется в `LocationService.InitializeService()`.
+
+### Почему независимый HotspotContainer, не child Background actor'а
+
+`FindObjectOfType` запрещён. Независимый контейнер не требует поиска родителя и не зависит от внутренней иерархии Naninovel.
 
 ### Спайк 1.1.1 — ЗАКРЫТ
-Хотспоты — World Space `SpriteRenderer` как дочерние объекты Background actor. Позиции хранятся как `Vector2 normalizedPosition [0,1]`, конвертируются в `localPosition` через `mesh.bounds.size` в runtime. Подробности: `spike_1_1_1_report.md`.
+
+`MatchMode=Custom(ratio=1)` — PPU фиксирован = 133.33. Позиции — `normalizedPosition [0,1]` × `backgroundWorldSize` из конфига. Подробности: `spike_1_1_1_report.md`.
 
 ---
 
 ## 3. Форма и визуализация хотспотов
 
-### Решение
-Каждый хотспот — **Sprite произвольной формы**, нарисованный художником по кадру из видео.
+### Компоненты HotspotView
 
-- `PolygonCollider2D` генерируется автоматически по alpha-контуру спрайта → click detection точный
-- Спрайт позиционируется один раз при создании локации, anchor зафиксирован
+```
+HotspotView (GameObject)
+  ├── SpriteRenderer       — alpha=0 при спауне, fade-in вместе с фоном
+  ├── PolygonCollider2D    — по alpha-контуру спрайта
+  └── HotspotView.cs       — passive view, Action-колбэки
+```
 
 ### Визуальные состояния
+
 | Состояние | Реализация |
 |---|---|
 | Idle | `HotspotOutlineMaterial` — тонкий контур |
-| Hover | Тот же материал, яркость выше (MaterialPropertyBlock) + fade-in Label |
-| Click | Callback → действие |
-| Скрытый предмет | `HotspotShimmerMaterial` — эффект блика |
+| Hover | Яркость выше (MaterialPropertyBlock) + Label |
+| Click | `IHotspotInput` → `LocationService` |
+| Секрет | `HotspotShimmerMaterial` |
+
+### Input-абстракция
+
+```csharp
+public interface IHotspotInput
+{
+    event Action<string> OnHotspotClicked;
+    event Action<string> OnHotspotHovered;
+    event Action<string> OnHotspotHoverExited;
+}
+```
+
+`MouseHotspotInput` — текущая реализация. При добавлении геймпада — новая реализация `IHotspotInput`, `LocationService` не меняется.
 
 ### Смена курсора
-`HotspotCursorController` — `Cursor.SetCursor()` при hover, возврат к дефолту при выходе.
 
-### Подписи
-`ManagedTextProvider` (Naninovel локализация) на дочернем Text объекте каждого хотспота. Ключ локализации хранится в `HotspotEntry`.
+`HotspotCursorController` подписывается на `IHotspotInput`, вызывает `Cursor.SetCursor()`.
 
 ---
 
 ## 4. Активация хотспотов
 
-### Решение
-Каждая локация имеет свой **отдельный префаб хотспотов**. `HotspotLayerUI` при входе на локацию загружает нужный префаб через `AssetReference` и инстанциирует его как дочерний объект. При смене локации предыдущий инстанс уничтожается.
+### Классы
 
-Внутри префаба все `HotspotView` изначально `SetActive(false)`. `HotspotLayerUI` активирует нужные по условиям из конфига, матчинг — по совпадению `HotspotEntry.id` с `HotspotView.id`. Хотспоты предметов, чьи id присутствуют в `LocationService.State.ConsumedItemIds`, не активируются — они одноразовые.
+| Класс | Тип | Ответственность |
+|---|---|---|
+| `HotspotLogic` | plain C# | Какие хотспоты активны, условия |
+| `HotspotManager` | MonoBehaviour | Жизненный цикл `HotspotContainer`, загрузка префаба, fade |
+| `MouseHotspotInput` | MonoBehaviour, `IHotspotInput` | Агрегирует события `HotspotView` |
+| `HotspotCursorController` | MonoBehaviour | Меняет курсор |
 
-### Почему префаб на локацию, а не все в одной сцене
-Единая сцена со всеми хотспотами всех локаций — лишний расход памяти и коллизии при редактировании. Префаб на локацию изолирует контент, упрощает авторинг художником и согласуется с Addressable-группировкой по дням (PROJECT_GUIDELINES §6).
+### Поток при входе на локацию
+
+1. `LocationService.Enter()` вызывает `IBackgroundManager.GetActor("location").ChangeAppearanceAsync(videoPath, duration)`
+2. Параллельно — `HotspotManager.LoadAsync(definition, locationData, consumedIds, duration)`
+3. `HotspotManager`: уничтожает старый контейнер → загружает префаб → `alpha=0`
+4. `HotspotLogic` определяет активные `HotspotView`
+5. Активные view регистрируются в `MouseHotspotInput`
+6. Fade-in параллельно с фоном
+
+### API управления
+
+```csharp
+hotspotManager.DeactivateHotspot(string id); // после клика по предмету
+hotspotManager.SetVisible(bool visible);     // на время onClickScript
+```
 
 ---
 
-## 6. Слои данных (конфиги и домен)
+## 5. Команды
 
-Система локаций использует два чётко разделённых слоя данных.
+| Команда | Контекст | Действие |
+|---|---|---|
+| `@exitNarrative` | нарратив | Входим в свободное перемещение на `CurrentLocationId`. Блокирует до `OnAllQuestsCompleted` |
+| `@exitNarrative id:backyard` | нарратив | То же, но принудительно устанавливает локацию |
+| `@activateDayQuests day:day1` | нарратив | Инициализирует квесты дня перед `@exitNarrative` |
+| `@enterLocation id:backyard` | QA / debug | Прямой вход на локацию без ожидания квестов |
+
+`@enterLocation` **не используется** в продакшн нарративе — только для отладки и тестирования через debug panel.
+
+---
+
+## 6. Слои данных
 
 ### Инфраструктурный слой (Unity SO)
 
-Используется для настройки в Inspector и загрузки ассетов через Addressables. Содержит Unity-специфичные типы (`AssetReference`, `AssetReferenceSprite`). **Не передаётся за пределы `LocationService`.**
-
 ```
-LocationConfig : ScriptableObject      ← корневой конфиг, один на проект
+LocationConfig : ScriptableObject
   └── LocationDefinition[]
         ├── id: string
-        ├── videoRef: AssetReference
+        ├── videoPath: string                  ← appearance для IBackgroundManager
         ├── hotspotPrefabRef: AssetReference
-        ├── onEnterScript: string                ← имя .nani скрипта (опционально)
+        ├── backgroundWorldSize: Vector2        ← (25.6, 14.4) / (19.2, 10.8)
+        ├── transitionDuration: float          ← длительность перехода фона и fade хотспотов
+        ├── onEnterScript: string              ← .nani скрипт при входе (опционально)
         ├── hasBackButton: bool
         └── hotspots: HotspotEntry[]
               ├── id, localizationKey
+              ├── normalizedPosition: Vector2   ← [0,1]
               ├── spriteRef: AssetReferenceSprite
-              ├── type: HotspotType
+              ├── type: HotspotType             ← Transition | MiniGame | Item
               ├── condition: ActivationCondition
               ├── conditionValue: string
-              └── itemConfig: AssetReference<InteractableItemConfig>  (только для Item)
-
-InteractableItemConfig : ScriptableObject
-  ├── type: QuestItem | Secret
-  ├── onClickScript: string
-  ├── objectiveTag: string
-  ├── attractionDelta: int
-  ├── suspicionDelta: int
-  └── characterId: string
+              └── itemConfig: AssetReference<InteractableItemConfig>
 ```
 
 ### Доменный слой (plain C#)
-
-Используется только `LocationLogic`. Не содержит `UnityEngine`, `AssetReference` или `MonoBehaviour`. Создаётся `LocationService` при инициализации путём маппинга из инфраструктурного слоя.
 
 ```csharp
 public class LocationData
@@ -118,131 +174,45 @@ public class HotspotData
 }
 ```
 
-`HotspotType` и `ActivationCondition` — чистые C# enum, используются обоими слоями.
-
-### Маппинг
-
-Каждый инфра-класс сам знает как спроецировать себя в доменный тип:
-
-```csharp
-// LocationDefinition.cs
-public LocationData ToLocationData() => new LocationData
-{
-    Id            = id,
-    OnEnterScript = onEnterScript,
-    HasBackButton = hasBackButton,
-    Hotspots      = hotspots.Select(h => h.ToHotspotData()).ToArray()
-};
-
-// HotspotEntry.cs
-public HotspotData ToHotspotData() => new HotspotData
-{
-    Id             = id,
-    Type           = type,
-    Condition      = condition,
-    ConditionValue = conditionValue
-};
-```
-
-`LocationService.InitializeService()` использует эти методы:
-
-```csharp
-var data = _config.locations.Select(d => d.ToLocationData()).ToArray();
-_logic = new LocationLogic(data);
-```
-
-```
-LocationConfig (SO)
-      │  .ToLocationData()  на каждом LocationDefinition
-      ▼
-LocationData[] → LocationLogic
-```
-
-За пределы `LocationService` уходит только `LocationData`. `OnLocationEntered` event несёт `LocationData`, не `LocationDefinition`.
-
-> Все ссылки на ассеты — только через `AssetReference`. Имена .nani скриптов — `string` (Naninovel загружает по имени нативно).
-
 ---
 
-## 7. Регистрация (фрагмент — локации)
+## 7. Регистрация и Save/Load
 
-### Регистрация сервиса
-
-`[InitializeAtRuntime]` — Naninovel находит сервис автоматически. `GameConfig` инжектируется через конструктор:
+### LocationService
 
 ```csharp
 [InitializeAtRuntime]
 public class LocationService : IStatefulService<LocationServiceState>
 {
-    public LocationService(GameConfig gameConfig)
-    {
-        _config = gameConfig.LocationConfig;
-    }
+    public LocationService(GameConfig gameConfig, IBackgroundManager backgroundManager,
+                           ICameraManager cameraManager) { ... }
 }
 ```
 
-`EnterLocationCommand` регистрировать вручную не нужно — Naninovel находит все `Command`-наследники через рефлексию.
-
-### В .nani скриптах
-```
-@back videoPath:backyard_video      ← Naninovel показывает фон
-@enterLocation id:backyard          ← LocationService.Enter()
-```
-
-### LocationServiceState (Naninovel serialization contract)
+### LocationServiceState
 
 ```csharp
 [System.Serializable]
 public class LocationServiceState
 {
     public string CurrentLocationId;
-    public string[] LocationHistory;  // TODO: временно — стек истории переходов.
-                                      // По GDD кнопка "Назад" — возврат из тупиковой локации
-                                      // в фиксированную родительскую, не произвольная история.
-                                      // Заменить на parentLocationId после реализации
-                                      // LocationTransitionManager в доменном слое.
+    public string[] LocationHistory;   // TODO: временно — заменить на parentLocationId
     public string[] ConsumedItemIds;
+    public bool IsInFreeRoam;
 }
 ```
 
-Runtime-состоянием владеет `LocationLogic`. `LocationServiceState` — только контракт для Naninovel JSON-сериализации, заполняется через `LocationLogicSnapshot`.
+### Save/Load поведение
 
-### LocationLogicSnapshot
-
-Промежуточный объект между доменным состоянием и Naninovel-контрактом. Чистый C#, без Unity-зависимостей:
-
-```csharp
-public readonly struct LocationLogicSnapshot
-{
-    public readonly string CurrentLocationId;
-    public readonly string[] LocationHistory;  // TODO: временно, см. LocationServiceState
-    public readonly string[] ConsumedItemIds;
-}
-```
-
-> **TODO:** `LocationHistory` + `GoBack()` — временная реализация не соответствующая GDD.
-> По GDD кнопка "Назад" доступна только в тупиковых локациях и возвращает в фиксированную
-> родительскую точку. Текущий стек истории будет заменён на `LocationTransitionManager`
-> в доменном слое с `parentLocationId` в конфиге. Текущая реализация функционально корректна
-> для демо.
-
-### ReportEvent из LocationService
-```csharp
-public void OnItemClicked(string itemId)
-{
-    _logic.MarkConsumed(itemId);
-    // Полная реализация — Ticket 1.3.3
-    Engine.GetService<IQuestEventReporter>()
-        ?.ReportEvent(_itemConfigMap[itemId].objectiveTag); // null-safe
-}
-```
+- `IsInFreeRoam=true` при загрузке → Naninovel восстанавливает строку `@exitNarrative` → `LocationService.Enter()` восстанавливает фон + хотспоты автоматически
+- `IsInFreeRoam=false` → нарративный скрипт восстанавливает своё состояние, `LocationService` не вмешивается
 
 ---
 
-## 10. Аудио (фрагмент — локации)
+## 10. Аудио
 
 | Ключ | Момент | Приоритет |
 |---|---|---|
-| `click_movement_forward` | Клик по хотспоту перехода вперёд | Med |
+| `click_movement_forward` | Клик по transition-хотспоту | Med |
 | `click_movement_back` | Клик по кнопке "Назад" | Med |
-| `click_object` | Клик по интерактивному предмету | Med |
+| `click_object` | Клик по предмету | Med |
