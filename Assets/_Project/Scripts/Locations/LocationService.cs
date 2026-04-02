@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Naninovel;
 using OnlyFarms.Core;
 using OnlyFarms.Locations.Domain;
@@ -7,6 +9,7 @@ using OnlyFarms.Locations.Input;
 using OnlyFarms.Locations.UI;
 using OnlyFarms.Utilities;
 using UnityEngine;
+using UniTaskExtensions = Cysharp.Threading.Tasks.UniTaskExtensions;
 
 namespace OnlyFarms.Locations
 {
@@ -55,6 +58,12 @@ namespace OnlyFarms.Locations
             UnityEngine.Object.DontDestroyOnLoad(cursorGo);
             
             cursorGo.AddComponent<HotspotCursorController>().Initialize(mouseInput);
+            
+            UniTaskExtensions.Forget(_hotspotManager.LoadAsync(
+                _config.Locations.First().HotspotPrefabRef, 
+                _config.Locations.First().Hotspots.Select(h => h.GetHotspotData()).ToArray(), 
+                new HashSet<string>(),
+                .3f, CancellationToken.None));
         }
 
 

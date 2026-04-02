@@ -15,6 +15,16 @@ MonoBehaviour:
   m_GroupName: Default Local Group
   m_GUID: e4745b242e2624ac79ddc320a76669f2
   m_SerializeEntries:
+  - m_GUID: 4bbc0cfe5bb9341ee9954d4fe76e7e22
+    m_Address: Assets/_Project/Art/Static/Tests/HotspotContainer.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9fd9ea5e5128b4977b52e1ab66fd1dd6
+    m_Address: Assets/_Project/Art/Static/Tests/Alex_Room.mp4
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a7abd4fe88084440ab78255c406976f3
     m_Address: Assets/_Project/Art/Static/Tests/Green-sprite.png
     m_ReadOnly: 0

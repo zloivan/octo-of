@@ -118,7 +118,7 @@ namespace OnlyFarms.Locations
                 await UniTask.NextFrame(ct);
             }
             
-            SetAlpha(0f);
+            SetAlpha(to);
         }
 
         private void SetAlpha(float alpha)

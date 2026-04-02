@@ -14,25 +14,79 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Locations:
   - Id: test_location
-    VideoRef:
-      m_AssetGUID: cb61671860b9349088e45382ef8d6421
-      m_SubObjectName: Day1_static6_1_0
+    BackgroundRef:
+      m_AssetGUID: 9fd9ea5e5128b4977b52e1ab66fd1dd6
+      m_SubObjectName: 
       m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
       m_SubObjectGUID: 
-      m_EditorAssetChanged: 1
+      m_EditorAssetChanged: 0
     HotspotPrefabRef:
-      m_AssetGUID: a7abd4fe88084440ab78255c406976f3
-      m_SubObjectName: Green-sprite_0
+      m_AssetGUID: 4bbc0cfe5bb9341ee9954d4fe76e7e22
+      m_SubObjectName: 
       m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
       m_SubObjectGUID: 
-      m_EditorAssetChanged: 1
+      m_EditorAssetChanged: 0
     OnEnterScript: 
     HasBackButton: 0
     Hotspots:
-    - Id: keys
-      LocationKey: home
+    - Id: hotspot1
+      LocationKey: test_location
+      SpriteRef:
+        m_AssetGUID: a7abd4fe88084440ab78255c406976f3
+        m_SubObjectName: Green-sprite_0
+        m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+          Culture=neutral, PublicKeyToken=null
+        m_SubObjectGUID: 
+        m_EditorAssetChanged: 1
+      Type: 0
+      Condition: 0
+      ConditionValue: false
+      ItemConfig:
+        m_AssetGUID: 
+        m_SubObjectName: 
+        m_SubObjectType: 
+        m_SubObjectGUID: 
+        m_EditorAssetChanged: 0
+    - Id: hotspot2
+      LocationKey: test_location
+      SpriteRef:
+        m_AssetGUID: a7abd4fe88084440ab78255c406976f3
+        m_SubObjectName: Green-sprite_0
+        m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+          Culture=neutral, PublicKeyToken=null
+        m_SubObjectGUID: 
+        m_EditorAssetChanged: 1
+      Type: 0
+      Condition: 0
+      ConditionValue: false
+      ItemConfig:
+        m_AssetGUID: 
+        m_SubObjectName: 
+        m_SubObjectType: 
+        m_SubObjectGUID: 
+        m_EditorAssetChanged: 0
+    - Id: hotspot3
+      LocationKey: test_location
+      SpriteRef:
+        m_AssetGUID: a7abd4fe88084440ab78255c406976f3
+        m_SubObjectName: Green-sprite_0
+        m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+          Culture=neutral, PublicKeyToken=null
+        m_SubObjectGUID: 
+        m_EditorAssetChanged: 1
+      Type: 2
+      Condition: 0
+      ConditionValue: false
+      ItemConfig:
+        m_AssetGUID: 
+        m_SubObjectName: 
+        m_SubObjectType: 
+        m_SubObjectGUID: 
+        m_EditorAssetChanged: 0
+    - Id: hotspot5
+      LocationKey: test_location
       SpriteRef:
         m_AssetGUID: a7abd4fe88084440ab78255c406976f3
         m_SubObjectName: Green-sprite_0
@@ -50,7 +104,7 @@ MonoBehaviour:
         m_SubObjectGUID: 
         m_EditorAssetChanged: 0
   - Id: test_location_2
-    VideoRef:
+    BackgroundRef:
       m_AssetGUID: cb61671860b9349088e45382ef8d6421
       m_SubObjectName: Day1_static6_1_0
       m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
@@ -58,12 +112,12 @@ MonoBehaviour:
       m_SubObjectGUID: 
       m_EditorAssetChanged: 1
     HotspotPrefabRef:
-      m_AssetGUID: a7abd4fe88084440ab78255c406976f3
-      m_SubObjectName: Green-sprite_0
+      m_AssetGUID: 
+      m_SubObjectName: 
       m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
       m_SubObjectGUID: 
-      m_EditorAssetChanged: 1
+      m_EditorAssetChanged: 0
     OnEnterScript: 
     HasBackButton: 1
     Hotspots: []

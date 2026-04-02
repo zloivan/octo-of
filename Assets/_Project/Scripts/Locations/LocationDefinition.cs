@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using OnlyFarms.Locations.Domain;
 using UnityEngine.AddressableAssets;
+using UnityEngine.Serialization;
 
 namespace OnlyFarms.Locations
 {
@@ -9,7 +10,7 @@ namespace OnlyFarms.Locations
     public class LocationDefinition
     {
         public string Id; //TODO: String identifier not good
-        public AssetReference VideoRef;
+        [FormerlySerializedAs("VideoRef")] public AssetReference BackgroundRef;
         public AssetReference HotspotPrefabRef;
         public string OnEnterScript; //TODO: String identifier not good
         public bool HasBackButton;

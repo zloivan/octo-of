@@ -14,7 +14,7 @@ namespace OnlyFarms.Locations.UI
 
         [SerializeField] private string _id;
         [SerializeField] private SpriteRenderer _spriteRenderer;
-        [SerializeField] private Collider _collider;
+        [SerializeField] private Collider2D _collider;
         [SerializeField] private Material _outlineMaterial;
         [SerializeField] private Material _shimmerMaterial;
 
