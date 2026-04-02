@@ -1,31 +1,60 @@
 using System;
 using System.Linq;
-using Core;
-using Locations.Domain;
 using Naninovel;
-using Utilities;
+using OnlyFarms.Core;
+using OnlyFarms.Locations.Domain;
+using OnlyFarms.Locations.Input;
+using OnlyFarms.Locations.UI;
+using OnlyFarms.Utilities;
+using UnityEngine;
 
-namespace Locations
+namespace OnlyFarms.Locations
 {
+    //TODO: Все зависимости созданные здесь, по идее должны идти из корня композиций
     [InitializeAtRuntime]
     public class LocationService : IStatefulService<GameStateMap>
     {
         public event Action<LocationData> OnLocationEntered;
 
         private readonly LocationConfigSO _config;
+        private HotspotManager _hotspotManager;
         private LocationLogic _logic;
+        private IHotspotInput _hotspotInput;
 
         public LocationService(GameConfig gameConfig) =>
             _config = gameConfig.LocationConfig;
 
+        
         public UniTask InitializeService()
         {
             var data = _config.Locations.Select(l => l.ToLocationData()).ToArray();
             _logic = new LocationLogic(data);
 
+            InitializeHotspotManager();
+
             OFLogger.Log(
                 $"LocationService initialized with [{data.Length} ]locations: [{string.Join(", ", data.Select(d => d.ToString()))}] ");
             return UniTask.CompletedTask;
+        }
+
+        //TODO: Явно не обязанность этого сервиса, он должен только распределить обязанности
+        // временное решение, явно кто то другой должен отвечать за спаун и проверку подходит ли текущая локация или нет
+        private void InitializeHotspotManager()
+        {
+            var inputGo = new GameObject("HotspotInput");
+            UnityEngine.Object.DontDestroyOnLoad(inputGo);
+            var mouseInput = inputGo.AddComponent<MouseHotspotInput>();
+
+            var hotspotLogic = new HotspotLogic();
+            _hotspotManager = new HotspotManager(hotspotLogic, mouseInput);
+
+            _hotspotInput = mouseInput;
+            _hotspotInput.OnHotspotClicked += OnItemClicked;
+
+            var cursorGo = new GameObject("HotspotCursor");
+            UnityEngine.Object.DontDestroyOnLoad(cursorGo);
+            
+            cursorGo.AddComponent<HotspotCursorController>().Initialize(mouseInput);
         }
 
 
@@ -48,9 +77,9 @@ namespace Locations
             {
                 CurrentLocationId = snapshot.CurrentLocationId,
                 LocationHistoryArray = snapshot.LocationHistory,
-                ConsumedItemsIdArray = snapshot.ConsumedItemIds
+                ConsumedItemsIdArray = snapshot.ConsumedItemIds,
             };
-            
+
             stateMap.SetState(state); // Упаковка кастомного объекта [4]
         }
 
@@ -58,7 +87,7 @@ namespace Locations
         public UniTask LoadServiceState(GameStateMap stateMap)
         {
             var state = stateMap.GetState<LocationServiceState>(); // Извлечение по типу [4]
-            
+
             if (state != null)
             {
                 _logic.LoadSnapshot(new LocationLogicSnapshot(
@@ -66,7 +95,7 @@ namespace Locations
                     state.LocationHistoryArray ?? Array.Empty<string>(),
                     state.ConsumedItemsIdArray ?? Array.Empty<string>()));
             }
-            
+
             return UniTask.CompletedTask;
         }
 

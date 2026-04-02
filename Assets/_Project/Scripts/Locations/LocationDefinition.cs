@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
-using Locations.Domain;
+using OnlyFarms.Locations.Domain;
 using UnityEngine.AddressableAssets;
 
-namespace Locations
+namespace OnlyFarms.Locations
 {
     [Serializable]
     public class LocationDefinition

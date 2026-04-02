@@ -1,4 +1,4 @@
-namespace Locations.Domain
+namespace OnlyFarms.Locations.Domain
 {
     public enum HotspotType
     {

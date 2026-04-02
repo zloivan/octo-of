@@ -1,4 +1,4 @@
-namespace Utilities
+namespace OnlyFarms.Utilities
 {
     public class OFLogger
     {

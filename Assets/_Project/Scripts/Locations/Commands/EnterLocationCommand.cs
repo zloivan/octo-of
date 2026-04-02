@@ -1,6 +1,6 @@
 using Naninovel;
 
-namespace Locations.Commands
+namespace OnlyFarms.Locations.Commands
 {
     [CommandAlias("enterLocation")]
     public class EnterLocationCommand : Command

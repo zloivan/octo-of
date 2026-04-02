@@ -1,6 +1,6 @@
 using System;
 
-namespace Locations.Domain
+namespace OnlyFarms.Locations.Domain
 {
     [Serializable]
     public class HotspotData

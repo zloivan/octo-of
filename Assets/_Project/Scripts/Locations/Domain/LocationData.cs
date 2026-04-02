@@ -1,4 +1,4 @@
-namespace Locations.Domain
+namespace OnlyFarms.Locations.Domain
 {
     public sealed class LocationData
     {

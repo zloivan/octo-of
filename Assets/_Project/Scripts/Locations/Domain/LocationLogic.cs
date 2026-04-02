@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Locations.Domain
+namespace OnlyFarms.Locations.Domain
 {
     public class LocationLogic
     {

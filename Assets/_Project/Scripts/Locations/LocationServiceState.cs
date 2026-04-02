@@ -1,6 +1,6 @@
 using System;
 
-namespace Locations
+namespace OnlyFarms.Locations
 {
     [Serializable]
     public class LocationServiceState

@@ -1,8 +1,8 @@
-using Locations;
 using Naninovel;
-using Utilities;
+using OnlyFarms.Locations;
+using OnlyFarms.Utilities;
 
-namespace Tests
+namespace OnlyFarms.Tests
 {
     public class DebugConsole
     {

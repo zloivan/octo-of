@@ -1,7 +1,7 @@
-using Locations;
 using Naninovel;
+using OnlyFarms.Locations;
 
-namespace Core
+namespace OnlyFarms.Core
 {
     [EditInProjectSettings]
     public class GameConfig : Configuration
