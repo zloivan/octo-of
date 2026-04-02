@@ -41,6 +41,9 @@ namespace OnlyFarms.Locations.UI
         public void OnPointerClick(PointerEventData eventData) =>
             OnClicked?.Invoke();
 
+        void OnMouseDown() =>
+            Debug.Log("Physics hit OK");
+
         public void SetInteractable(bool isEnabled) =>
             _collider.enabled = isEnabled;
 

@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Naninovel;
+using Naninovel.UI;
 using OnlyFarms.Core;
 using OnlyFarms.Locations.Domain;
 using OnlyFarms.Locations.Input;
 using OnlyFarms.Locations.UI;
 using OnlyFarms.Utilities;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using UniTaskExtensions = Cysharp.Threading.Tasks.UniTaskExtensions;
 
 namespace OnlyFarms.Locations
@@ -32,12 +36,30 @@ namespace OnlyFarms.Locations
         {
             var data = _config.Locations.Select(l => l.ToLocationData()).ToArray();
             _logic = new LocationLogic(data);
-
+            
             InitializeHotspotManager();
+            
+            OnInitialized();
 
             OFLogger.Log(
                 $"LocationService initialized with [{data.Length} ]locations: [{string.Join(", ", data.Select(d => d.ToString()))}] ");
             return UniTask.CompletedTask;
+        }
+
+        //TODO: Очень грязно
+        private async UniTask OnInitialized()
+        {
+            Engine.GetService<ICameraManager>().Camera.AddComponent<Physics2DRaycaster>();
+            
+            
+             //TODO: КОСТЫЛЬ, ИСПРАВЬ ПОЖАЛУЙСТА
+            
+            
+            await UniTask.WaitUntil(() => Engine.Initialized);
+            var uiManager = Engine.GetService<IUIManager>();
+            var continueUI = uiManager.GetUI<ContinueInputUI>();
+            if (continueUI != null)
+                continueUI.GetComponent<GraphicRaycaster>().enabled = false;
         }
 
         //TODO: Явно не обязанность этого сервиса, он должен только распределить обязанности
@@ -117,8 +139,8 @@ namespace OnlyFarms.Locations
 
         public void OnItemClicked(string itemId)
         {
-            _logic.MarkConsumed(itemId);
             OFLogger.Log($"LocationService item clicked {itemId}");
+            _logic.MarkConsumed(itemId);
         }
 
         public void GoBack()

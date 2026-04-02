@@ -12,16 +12,31 @@ namespace OnlyFarms.Locations.Input
 
         public void Register(HotSpotView view)
         {
-            view.OnClicked += () => OnHotspotClicked?.Invoke(view.GetId());
-            view.OnHovered += () => OnHotspotHovered?.Invoke(view.GetId());
-            view.OnHoverExited += () => OnHotspotHoverExited?.Invoke(view.GetId());
+            view.OnClicked += () => InvokeHotspotClick(view);
+            view.OnHovered += () => InvokeHotspotHovered(view);
+            view.OnHoverExited += () => InvokeHotspotHoverExited(view);
+        }
+
+        private void InvokeHotspotHoverExited(HotSpotView view)
+        {
+            OnHotspotHoverExited?.Invoke(view.GetId());
+        }
+
+        private void InvokeHotspotHovered(HotSpotView view)
+        {
+            OnHotspotHovered?.Invoke(view.GetId());
+        }
+
+        private void InvokeHotspotClick(HotSpotView view)
+        {
+            OnHotspotClicked?.Invoke(view.GetId());
         }
 
         public void Clear()
         {
-            OnHotspotClicked = null;
-            OnHotspotHovered = null;
-            OnHotspotHoverExited = null;
+            // OnHotspotClicked = null;
+            // OnHotspotHovered = null;
+            // OnHotspotHoverExited = null;
         }
     }
 }
