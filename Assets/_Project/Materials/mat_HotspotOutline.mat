@@ -42,14 +42,14 @@ Material:
     m_Ints: []
     m_Floats:
     - _Brightness: 1
-    - _DashDensity: 2
+    - _DashDensity: 4
     - _DashEnabled: 1
-    - _DashSharpness: 0.518
-    - _DashSpeed: 2
+    - _DashSharpness: 0
+    - _DashSpeed: 4.09
     - _EnableExternalAlpha: 0
-    - _GradientFalloff: 0
-    - _InnerWidth: 7.7
-    - _OutlineWidth: 8.2
+    - _GradientFalloff: 0.802
+    - _InnerWidth: 0
+    - _OutlineWidth: 21.68
     - _PulseEnabled: 1
     - _PulseMin: 0.8
     - _PulseSpeed: 4

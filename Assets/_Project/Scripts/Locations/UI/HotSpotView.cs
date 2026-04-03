@@ -52,12 +52,15 @@ namespace OnlyFarms.Locations.UI
             _spriteRenderer.SetPropertyBlock(_mpb);
         }
 
-        public void SetDash(bool enabled, float speed = 1f)
+        public void SetDash(bool enabled, float speed = -1f)
         {
             _mpb ??= new MaterialPropertyBlock();
             _spriteRenderer.GetPropertyBlock(_mpb);
             _mpb.SetFloat(DashEnabledId, enabled ? 1f : 0f);
-            _mpb.SetFloat(DashSpeedId, speed);
+            if (speed > 0f)
+            {
+                _mpb.SetFloat(DashSpeedId, speed);
+            }
             _spriteRenderer.SetPropertyBlock(_mpb);
         }
 
@@ -67,7 +70,7 @@ namespace OnlyFarms.Locations.UI
         public void OnPointerEnter(PointerEventData eventData)
         {
             SetBrightness(5f);
-            SetDash(true, 2f);
+            SetDash(true);
             OnHovered?.Invoke();
             OFLogger.Log("Pointer Enter");
         }

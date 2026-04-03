@@ -115,19 +115,41 @@ Shader "OnlyFarms/HotspotOutline"
                 return minA;
             }
 
+            half ComputeDashMask(float2 uv)
+            {
+                // Градиент alpha = нормаль к краю спрайта
+                float2 g;
+                g.x = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2( _MainTex_TexelSize.x, 0)).a
+                    - SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2(-_MainTex_TexelSize.x, 0)).a;
+                g.y = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2(0, _MainTex_TexelSize.y)).a
+                    - SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2(0, -_MainTex_TexelSize.y)).a;
+
+                // Тангент = перпендикуляр к нормали
+                float2 tangent = normalize(float2(-g.y, g.x) + 0.0001);
+
+                // Проекция UV на тангент = приближение к arc length
+                float arcParam = dot(uv, tangent);
+
+                float wave = sin(arcParam * _DashDensity * 40.0 + _Time.y * _DashSpeed);
+                return smoothstep(-_DashSharpness, _DashSharpness, wave);
+            }
+
             half4 frag(Varyings IN) : SV_Target
             {
                 half4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
                 half rawAlpha = texColor.a;
                 texColor *= IN.color * _Color;
 
-                // Финальный brightness — общий для inner и outer outline
+                // Финальный brightness — общий для всего outline
                 half finalBrightness = _Brightness;
                 if (_PulseEnabled > 0.5)
                 {
                     half pulse = sin(_Time.y * _PulseSpeed) * 0.5 + 0.5;
                     finalBrightness *= lerp(_PulseMin, 1.0, pulse);
                 }
+
+                // Общий dash mask — вычисляем один раз
+                half dashMask = (_DashEnabled > 0.5) ? ComputeDashMask(IN.uv) : 1.0;
 
                 if (rawAlpha > 0.01)
                 {
@@ -136,8 +158,18 @@ Shader "OnlyFarms/HotspotOutline"
                     {
                         float2 oi = _MainTex_TexelSize.xy * _InnerWidth;
                         half minA = SampleNeighborsMin(IN.uv, oi);
+
                         if (minA < 0.01)
-                            return half4(_OutlineColor.rgb * finalBrightness, _OutlineColor.a * texColor.a);
+                        {
+                            float2 oiHalf = _MainTex_TexelSize.xy * (_InnerWidth * 0.5);
+                            half halfMinA = SampleNeighborsMin(IN.uv, oiHalf);
+                            half innerGradient = lerp(1.0, step(0.01, halfMinA), _GradientFalloff);
+
+                            return half4(
+                                _OutlineColor.rgb * finalBrightness,
+                                _OutlineColor.a * texColor.a * innerGradient * dashMask
+                            );
+                        }
                     }
 
                     // Fill interior
@@ -153,14 +185,6 @@ Shader "OnlyFarms/HotspotOutline"
                     float2 oFar = _MainTex_TexelSize.xy * (_OutlineWidth * 0.5);
                     half farAlpha = SampleNeighborsMax(IN.uv, oFar);
                     half gradientMask = lerp(1.0, farAlpha, _GradientFalloff);
-
-                    half dashMask = 1.0;
-                    if (_DashEnabled > 0.5)
-                    {
-                        float angle = atan2(IN.uv.y - 0.5, IN.uv.x - 0.5);
-                        float wave = sin(angle * _DashDensity + _Time.y * _DashSpeed);
-                        dashMask = smoothstep(-_DashSharpness, _DashSharpness, wave);
-                    }
 
                     return half4(
                         _OutlineColor.rgb * finalBrightness,
