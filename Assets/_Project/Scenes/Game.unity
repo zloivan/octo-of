@@ -127,6 +127,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 5225233891526624744, guid: 4bbc0cfe5bb9341ee9954d4fe76e7e22, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: edd188bc61d9b409597748fccba2b171, type: 3}
     - target: {fileID: 5681980066080437579, guid: 4bbc0cfe5bb9341ee9954d4fe76e7e22, type: 3}
       propertyPath: m_Name
       value: HotspotContainer
