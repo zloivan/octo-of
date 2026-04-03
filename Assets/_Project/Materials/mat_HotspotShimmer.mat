@@ -46,10 +46,16 @@ Material:
     - _GlowWidth: 3
     - _PulseMin: 0.4
     - _PulseSpeed: 1.5
+    - _SweepAngle: 30
+    - _SweepDelay: 2
+    - _SweepFrequency: 0.15
+    - _SweepSpeed: 0.7
+    - _SweepWidth: 0.15
     - _ZWrite: 0
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _GlowColor: {r: 1, g: 0.85, b: 0.29999998, a: 1}
     - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
+    - _SweepColor: {r: 1, g: 1, b: 1, a: 0.8}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
