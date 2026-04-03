@@ -50,6 +50,9 @@ Material:
     - _GradientFalloff: 0
     - _InnerWidth: 7.7
     - _OutlineWidth: 8.2
+    - _PulseEnabled: 1
+    - _PulseMin: 0.8
+    - _PulseSpeed: 4
     - _ZWrite: 0
     m_Colors:
     - _Color: {r: 0.9622642, g: 0.39489147, b: 0.39489147, a: 1}

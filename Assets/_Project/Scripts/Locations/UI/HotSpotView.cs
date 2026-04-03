@@ -10,6 +10,8 @@ namespace OnlyFarms.Locations.UI
         private static readonly int BrightnessId = Shader.PropertyToID("_Brightness");
         private static readonly int DashEnabledId = Shader.PropertyToID("_DashEnabled");
         private static readonly int DashSpeedId = Shader.PropertyToID("_DashSpeed");
+        private static readonly int PulseEnabledId = Shader.PropertyToID("_PulseEnabled");
+        private static readonly int PulseSpeedId = Shader.PropertyToID("_PulseSpeed");
         public event Action OnClicked;
         public event Action OnHovered;
         public event Action OnHoverExited;
@@ -37,6 +39,16 @@ namespace OnlyFarms.Locations.UI
 
             _spriteRenderer.GetPropertyBlock(_mpb);
             _mpb.SetFloat(BrightnessId, brightness);
+            _spriteRenderer.SetPropertyBlock(_mpb);
+        }
+
+
+        public void SetPulse(bool enabled, float speed = 1f)
+        {
+            _mpb ??= new MaterialPropertyBlock();
+            _spriteRenderer.GetPropertyBlock(_mpb);
+            _mpb.SetFloat(PulseEnabledId, enabled ? 1f : 0f);
+            _mpb.SetFloat(PulseSpeedId, speed);
             _spriteRenderer.SetPropertyBlock(_mpb);
         }
 
