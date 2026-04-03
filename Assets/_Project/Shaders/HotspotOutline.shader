@@ -6,8 +6,14 @@ Shader "OnlyFarms/HotspotOutline"
         _Color ("Tint", Color) = (1,1,1,1)
         _OutlineColor ("Outline Color", Color) = (1,1,1,1)
         _OutlineWidth ("Outline Width", Float) = 1.5
-        _Brightness ("Brightness", Float) = 1.0
         _InnerWidth ("Inner Outline Width", Float) = 0.0
+        _Brightness ("Brightness", Float) = 1.0
+        _FillColor ("Fill Color", Color) = (1,1,1,0)
+        _GradientFalloff ("Gradient Falloff", Range(0,1)) = 0.0
+        _DashEnabled ("Dash Enabled", Range(0,1)) = 0.0
+        _DashDensity ("Dash Density", Float) = 8.0
+        _DashSpeed ("Dash Speed", Float) = 1.0
+        _DashSharpness ("Dash Sharpness", Range(0,1)) = 0.5
     }
 
     SubShader
@@ -17,7 +23,7 @@ Shader "OnlyFarms/HotspotOutline"
             "Queue" = "Transparent"
             "RenderType" = "Transparent"
             "RenderPipeline" = "UniversalPipeline"
-            "IgnoreProjector" = "True"
+            "IgnoreProjector"= "True"
         }
 
         Blend SrcAlpha OneMinusSrcAlpha
@@ -49,14 +55,21 @@ Shader "OnlyFarms/HotspotOutline"
             TEXTURE2D(_MainTex);
             SAMPLER(sampler_MainTex);
 
+            float4 _MainTex_ST;
+            float4 _MainTex_TexelSize;
+
             CBUFFER_START(UnityPerMaterial)
-                float4 _MainTex_ST;
-                float4 _MainTex_TexelSize;
+                half4 _Color;
                 half4 _OutlineColor;
-                half4  _Color; 
+                half4 _FillColor;
                 float _OutlineWidth;
                 float _InnerWidth;
                 float _Brightness;
+                float _GradientFalloff;
+                float _DashEnabled;
+                float _DashDensity;
+                float _DashSpeed;
+                float _DashSharpness;
             CBUFFER_END
 
             Varyings vert(Attributes IN)
@@ -68,6 +81,36 @@ Shader "OnlyFarms/HotspotOutline"
                 return OUT;
             }
 
+            // Сэмплируем 8 соседей, возвращаем максимальную alpha
+            half SampleNeighborsMax(float2 uv, float2 offset)
+            {
+                half maxA = 0;
+                maxA = max(maxA, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2( offset.x, 0)).a);
+                maxA = max(maxA, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2(-offset.x, 0)).a);
+                maxA = max(maxA, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2( 0, offset.y)).a);
+                maxA = max(maxA, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2( 0, -offset.y)).a);
+                maxA = max(maxA, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2( offset.x, offset.y)).a);
+                maxA = max(maxA, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2(-offset.x, offset.y)).a);
+                maxA = max(maxA, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2( offset.x, -offset.y)).a);
+                maxA = max(maxA, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2(-offset.x, -offset.y)).a);
+                return maxA;
+            }
+
+            // Сэмплируем 8 соседей, возвращаем минимальную alpha (для inner)
+            half SampleNeighborsMin(float2 uv, float2 offset)
+            {
+                half minA = 1;
+                minA = min(minA, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2( offset.x, 0)).a);
+                minA = min(minA, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2(-offset.x, 0)).a);
+                minA = min(minA, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2( 0, offset.y)).a);
+                minA = min(minA, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2( 0, -offset.y)).a);
+                minA = min(minA, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2( offset.x, offset.y)).a);
+                minA = min(minA, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2(-offset.x, offset.y)).a);
+                minA = min(minA, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2( offset.x, -offset.y)).a);
+                minA = min(minA, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv + float2(-offset.x, -offset.y)).a);
+                return minA;
+            }
+
             half4 frag(Varyings IN) : SV_Target
             {
                 half4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
@@ -76,51 +119,46 @@ Shader "OnlyFarms/HotspotOutline"
 
                 if (rawAlpha > 0.01)
                 {
-                    // Пиксель внутри спрайта — проверяем inner outline
+                    // Inner outline
                     if (_InnerWidth > 0.0)
                     {
                         float2 oi = _MainTex_TexelSize.xy * _InnerWidth;
-
-                        half minAlpha = 1;
-                        minAlpha = min(
-                            minAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv + float2( oi.x, 0)).a);
-                        minAlpha = min(
-                            minAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv + float2(-oi.x, 0)).a);
-                        minAlpha = min(
-                            minAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv + float2( 0, oi.y)).a);
-                        minAlpha = min(
-                            minAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv + float2( 0, -oi.y)).a);
-                        minAlpha = min(
-                            minAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv + float2( oi.x, oi.y)).a);
-                        minAlpha = min(
-                            minAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv + float2(-oi.x, oi.y)).a);
-                        minAlpha = min(
-                            minAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv + float2( oi.x, -oi.y)).a);
-                        minAlpha = min(
-                            minAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv + float2(-oi.x, -oi.y)).a);
-
-                        if (minAlpha < 0.01)
+                        half minA = SampleNeighborsMin(IN.uv, oi);
+                        if (minA < 0.01)
                             return half4(_OutlineColor.rgb * _Brightness, _OutlineColor.a * texColor.a);
                     }
 
-                    return half4(0, 0, 0, 0);
+                    // Fill interior
+                    return half4(
+                        lerp(_FillColor.rgb, _FillColor.rgb, 0),
+                        _FillColor.a * texColor.a
+                    );
                 }
 
-                // Пиксель прозрачный — проверяем outer outline
-                float2 o = _MainTex_TexelSize.xy * _OutlineWidth;
+                // Outer outline — ближняя зона (полная alpha)
+                float2 oNear = _MainTex_TexelSize.xy * _OutlineWidth;
+                half nearAlpha = SampleNeighborsMax(IN.uv, oNear);
 
-                half maxAlpha = 0;
-                maxAlpha = max(maxAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv + float2( o.x, 0)).a);
-                maxAlpha = max(maxAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv + float2(-o.x, 0)).a);
-                maxAlpha = max(maxAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv + float2( 0, o.y)).a);
-                maxAlpha = max(maxAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv + float2( 0, -o.y)).a);
-                maxAlpha = max(maxAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv + float2( o.x, o.y)).a);
-                maxAlpha = max(maxAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv + float2(-o.x, o.y)).a);
-                maxAlpha = max(maxAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv + float2( o.x, -o.y)).a);
-                maxAlpha = max(maxAlpha, SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv + float2(-o.x, -o.y)).a);
+                if (nearAlpha > 0.01)
+                {
+                    float2 oFar = _MainTex_TexelSize.xy * (_OutlineWidth * 0.5);
+                    half farAlpha = SampleNeighborsMax(IN.uv, oFar);
+                    half gradientMask = lerp(1.0, farAlpha, _GradientFalloff);
 
-                if (maxAlpha > 0.01)
-                    return half4(_OutlineColor.rgb * _Brightness, _OutlineColor.a);
+                    // Dash — угол от центра текстуры, штрихи бегут по контуру
+                    half dashMask = 1.0;
+                    if (_DashEnabled > 0.5)
+                    {
+                        float angle = atan2(IN.uv.y - 0.5, IN.uv.x - 0.5);
+                        float wave = sin(angle * _DashDensity + _Time.y * _DashSpeed);
+                        dashMask = smoothstep(-_DashSharpness, _DashSharpness, wave);
+                    }
+
+                    return half4(
+                        _OutlineColor.rgb * _Brightness,
+                        _OutlineColor.a * gradientMask * dashMask
+                    );
+                }
 
                 return half4(0, 0, 0, 0);
             }

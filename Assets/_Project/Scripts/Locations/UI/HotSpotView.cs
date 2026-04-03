@@ -8,7 +8,8 @@ namespace OnlyFarms.Locations.UI
     public class HotSpotView : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         private static readonly int BrightnessId = Shader.PropertyToID("_Brightness");
-
+        private static readonly int DashEnabledId = Shader.PropertyToID("_DashEnabled");
+        private static readonly int DashSpeedId = Shader.PropertyToID("_DashSpeed");
         public event Action OnClicked;
         public event Action OnHovered;
         public event Action OnHoverExited;
@@ -19,23 +20,33 @@ namespace OnlyFarms.Locations.UI
         [SerializeField] private Material _outlineMaterial;
         [SerializeField] private Material _shimmerMaterial;
 
-        private MaterialPropertyBlock _mpg;
+        private MaterialPropertyBlock _mpb;
 
         private void Start()
         {
             if (_outlineMaterial != null)
                 _spriteRenderer.material = _outlineMaterial;
-            
+
             SetBrightness(.5f);
+            SetDash(false);
         }
 
         public void SetBrightness(float brightness)
         {
-            _mpg ??= new MaterialPropertyBlock();
+            _mpb ??= new MaterialPropertyBlock();
 
-            _spriteRenderer.GetPropertyBlock(_mpg);
-            _mpg.SetFloat(BrightnessId, brightness);
-            _spriteRenderer.SetPropertyBlock(_mpg);
+            _spriteRenderer.GetPropertyBlock(_mpb);
+            _mpb.SetFloat(BrightnessId, brightness);
+            _spriteRenderer.SetPropertyBlock(_mpb);
+        }
+
+        public void SetDash(bool enabled, float speed = 1f)
+        {
+            _mpb ??= new MaterialPropertyBlock();
+            _spriteRenderer.GetPropertyBlock(_mpb);
+            _mpb.SetFloat(DashEnabledId, enabled ? 1f : 0f);
+            _mpb.SetFloat(DashSpeedId, speed);
+            _spriteRenderer.SetPropertyBlock(_mpb);
         }
 
         public string GetId() =>
@@ -44,6 +55,7 @@ namespace OnlyFarms.Locations.UI
         public void OnPointerEnter(PointerEventData eventData)
         {
             SetBrightness(5f);
+            SetDash(true, 2f);
             OnHovered?.Invoke();
             OFLogger.Log("Pointer Enter");
         }
@@ -51,6 +63,7 @@ namespace OnlyFarms.Locations.UI
         public void OnPointerExit(PointerEventData eventData)
         {
             SetBrightness(.5f);
+            SetDash(false);
             OnHoverExited?.Invoke();
             OFLogger.Log("Pointer Exit");
         }
