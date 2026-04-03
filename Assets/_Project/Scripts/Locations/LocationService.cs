@@ -27,6 +27,7 @@ namespace OnlyFarms.Locations
         private LocationLogic _locationLogic;
         private HotspotLogic _hotspotLogic;
         private LocationHotspotController _locationHotspotController;
+        private HotspotCursorController _hotspotCursorController;
 
         private bool _isInFreeRoam;
 
@@ -53,10 +54,10 @@ namespace OnlyFarms.Locations
             _hotspotManager = new HotspotManager(mouseInput);
             _locationHotspotController = new LocationHotspotController(this, mouseInput);
 
-            var cursorGo = new GameObject("HotspotCursor");
-            UnityEngine.Object.DontDestroyOnLoad(cursorGo);
-
-            cursorGo.AddComponent<HotspotCursorController>().Initialize(mouseInput);
+            //var cursorGo = new GameObject("HotspotCursor");
+            //UnityEngine.Object.DontDestroyOnLoad(cursorGo);
+            _hotspotCursorController = new HotspotCursorController(mouseInput, _config.MouseTexture, _config.MouseTextureHotspot);
+            //cursorGo.AddComponent<HotspotCursorController>().Initialize(mouseInput);
 
 
             ApplyInputWorkaroundsAsync().Forget();
@@ -76,6 +77,7 @@ namespace OnlyFarms.Locations
         public void DestroyService()
         {
             _locationHotspotController.Dispose();
+            _hotspotCursorController.Dispose();
             OFLogger.Log("LocationService destroyed");
         }
 

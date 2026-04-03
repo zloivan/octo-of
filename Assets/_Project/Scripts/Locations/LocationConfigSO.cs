@@ -8,6 +8,8 @@ namespace OnlyFarms.Locations
     public class LocationConfigSO : ScriptableObject, ILocationRepository, IHotspotRepository
     {
         public LocationDefinition[] Locations;
+        public Texture2D MouseTexture;
+        public Vector2 MouseTextureHotspot;
 
         public LocationDefinition GetLocationDefinition(string locationId)
         {

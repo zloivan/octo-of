@@ -4,26 +4,21 @@ using UnityEngine;
 
 namespace OnlyFarms.Locations.UI
 {
-    public class HotspotCursorController : MonoBehaviour
+    public class HotspotCursorController : IDisposable
     {
-        [SerializeField] private Texture2D _cursorTexture;
-        [SerializeField] private Vector2 _cursorHotspot = Vector2.zero;
+        private readonly Texture2D _cursorTexture;
+        private readonly Vector2 _cursorHotspot;
+        private readonly IHotspotInput _hotspotInput;
 
-        private IHotspotInput _hotspotInput;
-
-        public void Initialize(IHotspotInput input) =>
+        public HotspotCursorController(IHotspotInput input, Texture2D cursorTexture, Vector2 cursorHotspot)
+        {
             _hotspotInput = input ?? throw new NullReferenceException("Hotspot input cannot be null");
 
-        private void Start()
-        {
+            _cursorTexture = cursorTexture;
+            _cursorHotspot = cursorHotspot;
+            
             _hotspotInput.OnHotspotHovered += UpdateCursorOnHover;
             _hotspotInput.OnHotspotHoverExited += ResetCursorToDefault;
-        }
-
-        private void OnDestroy()
-        {
-            _hotspotInput.OnHotspotHovered -= UpdateCursorOnHover;
-            _hotspotInput.OnHotspotHoverExited -= ResetCursorToDefault;
         }
 
         private static void ResetCursorToDefault(string hotspotId) =>
@@ -31,5 +26,11 @@ namespace OnlyFarms.Locations.UI
 
         private void UpdateCursorOnHover(string hotspotId) =>
             Cursor.SetCursor(_cursorTexture, _cursorHotspot, CursorMode.Auto);
+
+        public void Dispose()
+        {
+            _hotspotInput.OnHotspotHovered -= UpdateCursorOnHover;
+            _hotspotInput.OnHotspotHoverExited -= ResetCursorToDefault;
+        }
     }
 }

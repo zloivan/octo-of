@@ -68,3 +68,5 @@ MonoBehaviour:
       ConditionValue: 
       _targetLocationId: test_location
     TransitionDuration: 0.3
+  MouseTexture: {fileID: 2800000, guid: a7abd4fe88084440ab78255c406976f3, type: 3}
+  MouseTextureHotspot: {x: 0, y: 0}
