@@ -34,6 +34,8 @@ namespace OnlyFarms.Locations
         {
             _config = gameConfig.LocationConfig;
             _backgroundManager = backgroundManager;
+            //TODO: TESTING
+            _isInFreeRoam = true;
         }
 
         public UniTask InitializeService()
@@ -59,6 +61,7 @@ namespace OnlyFarms.Locations
 
             ApplyInputWorkaroundsAsync().Forget();
 
+
             OFLogger.Log("LocationService initialized");
             return UniTask.CompletedTask;
         }
@@ -67,7 +70,6 @@ namespace OnlyFarms.Locations
         {
             _locationLogic.Reset();
             _hotspotLogic.Reset();
-            _isInFreeRoam = false;
             OFLogger.Log("LocationService reset");
         }
 
@@ -123,9 +125,10 @@ namespace OnlyFarms.Locations
             {
                 _hotspotManager.DeactivateHotspot(hotspotId);
                 OFLogger.Log($"LocationService consumed item {hotspotId}");
+                return;
             }
 
-            
+
             Enter(_hotspotLogic.GetHotspotData(hotspotId).TargetLocationId, CancellationToken.None).Forget();
         }
 
@@ -160,6 +163,9 @@ namespace OnlyFarms.Locations
                 state.LocationHistoryArray ?? Array.Empty<string>()));
 
             _isInFreeRoam = state.IsInFreeRoam;
+            
+            if (!string.IsNullOrEmpty(state.CurrentLocationId) && state.IsInFreeRoam)
+                Enter(state.CurrentLocationId, CancellationToken.None).Forget();
 
             return UniTask.CompletedTask;
         }
