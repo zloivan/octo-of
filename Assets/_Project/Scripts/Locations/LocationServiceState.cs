@@ -8,5 +8,6 @@ namespace OnlyFarms.Locations
         public string CurrentLocationId;
         public string[] LocationHistoryArray;
         public string[] ConsumedItemsIdArray;
+        public bool IsInFreeRoam;
     }
 }

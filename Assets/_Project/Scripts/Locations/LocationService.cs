@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using Naninovel;
 using Naninovel.UI;
@@ -13,7 +11,6 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using UniTaskExtensions = Cysharp.Threading.Tasks.UniTaskExtensions;
 
 namespace OnlyFarms.Locations
 {
@@ -21,142 +18,166 @@ namespace OnlyFarms.Locations
     [InitializeAtRuntime]
     public class LocationService : IStatefulService<GameStateMap>
     {
+        private const string LOCATION_ACTOR = "location";
         public event Action<LocationData> OnLocationEntered;
 
         private readonly LocationConfigSO _config;
+        private readonly IBackgroundManager _backgroundManager;
         private HotspotManager _hotspotManager;
-        private LocationLogic _logic;
-        private IHotspotInput _hotspotInput;
+        private LocationLogic _locationLogic;
+        private HotspotLogic _hotspotLogic;
+        private LocationHotspotController _locationHotspotController;
 
-        public LocationService(GameConfig gameConfig) =>
+        private bool _isInFreeRoam;
+
+        public LocationService(GameConfig gameConfig, IBackgroundManager backgroundManager)
+        {
             _config = gameConfig.LocationConfig;
+            _backgroundManager = backgroundManager;
+        }
 
-        
         public UniTask InitializeService()
         {
-            var data = _config.Locations.Select(l => l.ToLocationData()).ToArray();
-            _logic = new LocationLogic(data);
-            
-            InitializeHotspotManager();
-            
-            OnInitialized();
+            _locationLogic = new LocationLogic(_config);
+            _hotspotLogic = new HotspotLogic(_config, new AlwaysAvailableHotspotValidator());
 
-            OFLogger.Log(
-                $"LocationService initialized with [{data.Length} ]locations: [{string.Join(", ", data.Select(d => d.ToString()))}] ");
+            //TODO: Явно не обязанность этого сервиса, он должен только распределить обязанности
+            //     временное решение, явно кто то другой должен отвечать за спаун и проверку подходит ли текущая локация или нет
+
+            var inputGo = new GameObject("HotspotInput");
+            UnityEngine.Object.DontDestroyOnLoad(inputGo);
+            var mouseInput = inputGo.AddComponent<MouseHotspotInput>();
+
+            _hotspotManager = new HotspotManager(mouseInput);
+            _locationHotspotController = new LocationHotspotController(this, mouseInput);
+
+            var cursorGo = new GameObject("HotspotCursor");
+            UnityEngine.Object.DontDestroyOnLoad(cursorGo);
+
+            cursorGo.AddComponent<HotspotCursorController>().Initialize(mouseInput);
+
+
+            ApplyInputWorkaroundsAsync().Forget();
+
+            OFLogger.Log("LocationService initialized");
             return UniTask.CompletedTask;
         }
 
-        //TODO: Очень грязно
-        private async UniTask OnInitialized()
+        public void ResetService()
+        {
+            _locationLogic.Reset();
+            _hotspotLogic.Reset();
+            _isInFreeRoam = false;
+            OFLogger.Log("LocationService reset");
+        }
+
+        public void DestroyService()
+        {
+            _locationHotspotController.Dispose();
+            OFLogger.Log("LocationService destroyed");
+        }
+
+        public async UniTask Enter(string locationId, AsyncToken ct)
+        {
+            var definition = _config.GetLocationDefinition(locationId);
+            _locationLogic.Enter(locationId);
+
+            var availableHotpots = _hotspotLogic.GetAvailableHotspots(locationId);
+            var bg = await _backgroundManager.GetOrAddActor(LOCATION_ACTOR);
+            bg.ChangeVisibility(true,
+                new Tween(0), token: ct);
+
+            await UniTask.WhenAll(
+                bg.ChangeAppearance(definition.BackgroundName,
+                    new Tween(definition.TransitionDuration), token: ct),
+                _hotspotManager.LoadAsync(
+                    definition.HotspotPrefabRef,
+                    availableHotpots,
+                    definition.TransitionDuration,
+                    ct.CancellationToken)
+            );
+
+            OnLocationEntered?.Invoke(_locationLogic.GetCurrentLocation());
+
+            OFLogger.Log($"LocationService entered {_locationLogic.GetCurrentLocation().Id}");
+        }
+
+        public async UniTask GoBack(AsyncToken ct)
+        {
+            if (!_locationLogic.CanGoBack())
+            {
+                OFLogger.Log("LocationService can't go back");
+                return;
+            }
+
+            _locationLogic.GoBack();
+
+            OFLogger.Log($"LocationService go back to: {_locationLogic.GetCurrentLocation().Id}");
+            await Enter(_locationLogic.GetCurrentLocation().Id, ct);
+        }
+
+        public void OnHotspotClicked(string hotspotId)
+        {
+            OFLogger.Log($"LocationService item clicked {hotspotId}");
+            if (_hotspotLogic.TryConsume(hotspotId))
+            {
+                _hotspotManager.DeactivateHotspot(hotspotId);
+                OFLogger.Log($"LocationService consumed item {hotspotId}");
+            }
+
+            
+            Enter(_hotspotLogic.GetHotspotData(hotspotId).TargetLocationId, CancellationToken.None).Forget();
+        }
+
+        public void SaveServiceState(GameStateMap stateMap)
+        {
+            var locationSnapshot = _locationLogic.GetSnapshot();
+            var hotspotSnapshot = _hotspotLogic.GetSnapshot();
+
+            var state = new LocationServiceState
+            {
+                CurrentLocationId = locationSnapshot.CurrentLocationId,
+                LocationHistoryArray = locationSnapshot.LocationHistory,
+                ConsumedItemsIdArray = hotspotSnapshot.ConsumedItemIds,
+                IsInFreeRoam = _isInFreeRoam,
+            };
+
+            stateMap.SetState(state);
+        }
+
+        public UniTask LoadServiceState(GameStateMap stateMap)
+        {
+            var state = stateMap.GetState<LocationServiceState>();
+
+            if (state == null)
+                return UniTask.CompletedTask;
+
+            _hotspotLogic.LoadSnapshot(new HotspotLogicSnapshot(
+                state.ConsumedItemsIdArray ?? Array.Empty<string>()));
+
+            _locationLogic.LoadSnapshot(new LocationLogicSnapshot(
+                state.CurrentLocationId,
+                state.LocationHistoryArray ?? Array.Empty<string>()));
+
+            _isInFreeRoam = state.IsInFreeRoam;
+
+            return UniTask.CompletedTask;
+        }
+
+        public string GetCurrentLocationId() =>
+            _locationLogic.GetCurrentLocation()?.Id;
+
+        //TODO: КОСТЫЛЬ, ИСПРАВЬ ПОЖАЛУЙСТА вынести отсюда или найти хорошее решение внтури Naninovel
+        private async UniTask ApplyInputWorkaroundsAsync()
         {
             Engine.GetService<ICameraManager>().Camera.AddComponent<Physics2DRaycaster>();
-            
-            
-             //TODO: КОСТЫЛЬ, ИСПРАВЬ ПОЖАЛУЙСТА
-            
-            
+
+
             await UniTask.WaitUntil(() => Engine.Initialized);
             var uiManager = Engine.GetService<IUIManager>();
             var continueUI = uiManager.GetUI<ContinueInputUI>();
             if (continueUI != null)
                 continueUI.GetComponent<GraphicRaycaster>().enabled = false;
         }
-
-        //TODO: Явно не обязанность этого сервиса, он должен только распределить обязанности
-        // временное решение, явно кто то другой должен отвечать за спаун и проверку подходит ли текущая локация или нет
-        private void InitializeHotspotManager()
-        {
-            var inputGo = new GameObject("HotspotInput");
-            UnityEngine.Object.DontDestroyOnLoad(inputGo);
-            var mouseInput = inputGo.AddComponent<MouseHotspotInput>();
-
-            var hotspotLogic = new HotspotLogic();
-            _hotspotManager = new HotspotManager(hotspotLogic, mouseInput);
-
-            _hotspotInput = mouseInput;
-            _hotspotInput.OnHotspotClicked += OnItemClicked;
-
-            var cursorGo = new GameObject("HotspotCursor");
-            UnityEngine.Object.DontDestroyOnLoad(cursorGo);
-            
-            cursorGo.AddComponent<HotspotCursorController>().Initialize(mouseInput);
-            
-            UniTaskExtensions.Forget(_hotspotManager.LoadAsync(
-                _config.Locations.First().HotspotPrefabRef, 
-                _config.Locations.First().Hotspots.Select(h => h.GetHotspotData()).ToArray(), 
-                new HashSet<string>(),
-                .3f, CancellationToken.None));
-        }
-
-
-        public void ResetService()
-        {
-            _logic.Reset();
-            OFLogger.Log("LocationService reset");
-        }
-
-        public void DestroyService()
-        {
-            OFLogger.Log("LocationService destroyed");
-        }
-
-        // Сохранение состояния в общую карту сессии
-        public void SaveServiceState(GameStateMap stateMap)
-        {
-            var snapshot = _logic.GetSnapshot();
-            var state = new LocationServiceState
-            {
-                CurrentLocationId = snapshot.CurrentLocationId,
-                LocationHistoryArray = snapshot.LocationHistory,
-                ConsumedItemsIdArray = snapshot.ConsumedItemIds,
-            };
-
-            stateMap.SetState(state); // Упаковка кастомного объекта [4]
-        }
-
-        // Загрузка состояния из карты сессии
-        public UniTask LoadServiceState(GameStateMap stateMap)
-        {
-            var state = stateMap.GetState<LocationServiceState>(); // Извлечение по типу [4]
-
-            if (state != null)
-            {
-                _logic.LoadSnapshot(new LocationLogicSnapshot(
-                    state.CurrentLocationId,
-                    state.LocationHistoryArray ?? Array.Empty<string>(),
-                    state.ConsumedItemsIdArray ?? Array.Empty<string>()));
-            }
-
-            return UniTask.CompletedTask;
-        }
-
-        public void Enter(string locationId)
-        {
-            _logic.Enter(locationId);
-            OnLocationEntered?.Invoke(_logic.GetCurrentLocation());
-            OFLogger.Log($"LocationService entered {_logic.GetCurrentLocation().Id}");
-        }
-
-        public void OnItemClicked(string itemId)
-        {
-            OFLogger.Log($"LocationService item clicked {itemId}");
-            _logic.MarkConsumed(itemId);
-        }
-
-        public void GoBack()
-        {
-            if (!_logic.CanGoBack())
-            {
-                OFLogger.Log("LocationService can't go back");
-                return;
-            }
-
-            _logic.GoBack();
-            OnLocationEntered?.Invoke(_logic.GetCurrentLocation());
-            OFLogger.Log($"LocationService go back to: {_logic.GetCurrentLocation().Id}");
-        }
-
-        public string GetCurrentLocationId() =>
-            _logic.GetCurrentLocation()?.Id;
     }
 }

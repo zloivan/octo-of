@@ -162,3 +162,11 @@ MonoBehaviour:
     - name: test
       pathPrefix: Backgrounds/VideoBackground
       guid: 9fd9ea5e5128b4977b52e1ab66fd1dd6
+  - Id: Backgrounds/f275f78e-01d8-4606-b70f-fe649cc01369
+    Resources:
+    - name: Alex_Room
+      pathPrefix: Backgrounds/location
+      guid: 9fd9ea5e5128b4977b52e1ab66fd1dd6
+    - name: Alicias_Room_Day
+      pathPrefix: Backgrounds/location
+      guid: 2c98f0ee0078c4218bec120a09897fd6

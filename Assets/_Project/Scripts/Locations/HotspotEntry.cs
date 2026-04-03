@@ -1,27 +1,19 @@
 using System;
 using OnlyFarms.Locations.Domain;
-using UnityEngine.AddressableAssets;
+using UnityEngine;
 
 namespace OnlyFarms.Locations
 {
     [Serializable]
     public class HotspotEntry
     {
-        public string Id;//TODO: String identifier not good
-        public string LocationKey;//TODO: String identifier not good
-        public AssetReferenceSprite SpriteRef;
-        public HotspotType Type;
-        public ActivationCondition Condition;
-        public string ConditionValue;//TODO: String identifier not good
-        public AssetReference ItemConfig;
+        [SerializeField] private string Id; //TODO: String identifier not good
+        [SerializeField] private HotspotType Type;
+        [SerializeField] private ActivationCondition Condition;
+        [SerializeField] private string ConditionValue; //TODO: String identifier not good
+        [SerializeField] private string _targetLocationId;
 
-        public HotspotData GetHotspotData() =>
-            new()
-            {
-                Id = Id,
-                Type = Type,
-                Condition = Condition,
-                ConditionValue = ConditionValue
-            };
+        public HotspotData GetHotspotData(string locationID) =>
+            new(Id, Type, Condition, ConditionValue, _targetLocationId, locationID);
     }
 }

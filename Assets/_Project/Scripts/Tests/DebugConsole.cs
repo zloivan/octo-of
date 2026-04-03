@@ -1,3 +1,4 @@
+using System.Threading;
 using Naninovel;
 using OnlyFarms.Locations;
 using OnlyFarms.Utilities;
@@ -9,13 +10,13 @@ namespace OnlyFarms.Tests
         [ConsoleCommand("goBack")]
         public static void GoBackConsole()
         {
-            Engine.GetService<LocationService>()?.GoBack();
+            Engine.GetService<LocationService>()?.GoBack(CancellationToken.None);
         }
 
         [ConsoleCommand("enter")]
         public static void EnterConsole(string locationId)
         {
-            Engine.GetService<LocationService>()?.Enter(locationId);
+            Engine.GetService<LocationService>()?.Enter(locationId, CancellationToken.None);
         }
         
         [ConsoleCommand("reset")]
@@ -27,7 +28,7 @@ namespace OnlyFarms.Tests
         [ConsoleCommand("consume")]
         public static void ConsumeConsole(string itemId)
         {
-            Engine.GetService<LocationService>()?.OnItemClicked(itemId);
+            Engine.GetService<LocationService>()?.OnHotspotClicked(itemId);
         }
         
         [ConsoleCommand("save")]

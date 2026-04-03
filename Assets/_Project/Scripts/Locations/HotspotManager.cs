@@ -1,13 +1,9 @@
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using Cysharp.Threading.Tasks;
-using OnlyFarms.Locations.Domain;
+using Naninovel;
 using OnlyFarms.Locations.Input;
 using OnlyFarms.Locations.UI;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UniTask = Cysharp.Threading.Tasks.UniTask;
 
 namespace OnlyFarms.Locations
 {
@@ -17,39 +13,36 @@ namespace OnlyFarms.Locations
     {
         private GameObject _container;
         private readonly MouseHotspotInput _mouseInput;
-        private readonly HotspotLogic _logic;
-        private HotSpotView[]  _hotspotViews;
+        private HotSpotView[] _hotspotViews;
 
-        public HotspotManager(HotspotLogic logic, MouseHotspotInput mouseInput)
+        public HotspotManager(MouseHotspotInput mouseInput)
         {
-            _logic = logic;
             _mouseInput = mouseInput;
         }
 
         //TODO: Этот метод делает слишком много всего, нужно разбить на несколько
         //  Этот очень непонятные переменные, я думаю сюда нужно отдавать только то что
         //  реально нужно этому классу, ссылки на полные структуры данных тут лишние
-        
+
         public async UniTask LoadAsync(AssetReference hotspotParentPrefabRef,
-            HotspotData[] hotspotsDataArray, HashSet<string> consumedIds, float duration, CancellationToken ct)
+            string[] activeIds, float duration, AsyncToken ct)
         {
             Unload();
 
             _mouseInput.Clear();
-
-            var prefab = await Addressables
-                .LoadAssetAsync<GameObject>(hotspotParentPrefabRef)
-                .ToUniTask(cancellationToken: ct);
+            
+            if (hotspotParentPrefabRef == null || !hotspotParentPrefabRef.RuntimeKeyIsValid())
+                return;
+            
+            var handle = Addressables.LoadAssetAsync<GameObject>(hotspotParentPrefabRef);
+            var prefab = await handle.Task.AsUniTask();
 
             _container = Object.Instantiate(prefab);
             Object.DontDestroyOnLoad(_container);
             SetAlpha(0f);
 
-            var activeIds = new HashSet<string>(_logic.GetActiveHotspotIds(
-                hotspotsDataArray, consumedIds, EvoluteCondition));
-            
             _hotspotViews = _container.GetComponentsInChildren<HotSpotView>();
-            
+
             foreach (var view in _hotspotViews)
             {
                 var active = activeIds.Contains(view.GetId());
@@ -63,7 +56,7 @@ namespace OnlyFarms.Locations
             await FadeAsync(0f, 1f, duration, ct);
         }
 
-        public void DeativateHotspot(string id)
+        public void DeactivateHotspot(string id)
         {
             if (_container == null)
             {
@@ -83,21 +76,16 @@ namespace OnlyFarms.Locations
 
         public void Unload()
         {
-            if (_container == null) 
-                return; 
-            
-            Object.Destroy(_container);//TODO: Обьект должен сам отвечать за свое уничтожение
+            if (_container == null)
+                return;
+
+            Object.Destroy(_container); //TODO: Обьект должен сам отвечать за свое уничтожение
             _container = null;
         }
 
-        //TODO: Что именно делает этот метод, фиговое название
-        //BUG: Не доделан метод, реализую потом
-        private bool EvoluteCondition(ActivationCondition condition, string conditionValue) =>
-            true;
-
         //TODO: Этот франкенштейн тут явно не к месту, класс не должен отвечать за детали отображения
         // к томуже почему тут не ислльзуется DoTween?
-        private async UniTask FadeAsync(float from, float to, float duration, CancellationToken ct)
+        private async UniTask FadeAsync(float from, float to, float duration, AsyncToken ct)
         {
             if (duration <= 0f)
             {
@@ -106,18 +94,18 @@ namespace OnlyFarms.Locations
             }
 
             var t = 0f;
-            while (t< duration)
+            while (t < duration)
             {
-                if (ct.IsCancellationRequested)
+                if (ct.Canceled)
                 {
                     return;
                 }
 
                 t += Time.deltaTime;
-                SetAlpha(Mathf.Lerp(from, to, t/duration));
-                await UniTask.NextFrame(ct);
+                SetAlpha(Mathf.Lerp(from, to, t / duration));
+                await UniTask.Yield(token: ct);
             }
-            
+
             SetAlpha(to);
         }
 
@@ -127,6 +115,7 @@ namespace OnlyFarms.Locations
             {
                 return;
             }
+
             //TODO: Это явно стоит отдать или самой View или кому то более специализированному,
             //  этот класс не должен отвечать за детали отображения
             var renderers = _container.GetComponentsInChildren<Renderer>();

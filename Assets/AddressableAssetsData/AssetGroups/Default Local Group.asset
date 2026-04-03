@@ -15,8 +15,18 @@ MonoBehaviour:
   m_GroupName: Default Local Group
   m_GUID: e4745b242e2624ac79ddc320a76669f2
   m_SerializeEntries:
+  - m_GUID: 2c98f0ee0078c4218bec120a09897fd6
+    m_Address: Assets/_Project/Art/Static/Tests/Alicias_Room_Day.mp4
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4bbc0cfe5bb9341ee9954d4fe76e7e22
     m_Address: Assets/_Project/Art/Static/Tests/HotspotContainer.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 61d7207672fc141eea7937adbcb52053
+    m_Address: Assets/_Project/Art/Static/Tests/Hotspot.prefab
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

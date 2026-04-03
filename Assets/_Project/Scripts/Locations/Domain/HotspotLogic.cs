@@ -1,16 +1,78 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using OnlyFarms.Utilities;
 
 namespace OnlyFarms.Locations.Domain
 {
     public class HotspotLogic
     {
-        public string[] GetActiveHotspotIds(HotspotData[] hotspots, HashSet<string> consumedIds, Func<ActivationCondition, string, bool> conditionEvaluator)
+        private HashSet<string> _consumedHotspotIds = new();
+        private readonly HotspotData[] _allHotspots;
+        private readonly IHotspotValidator _validator;
+
+        public HotspotLogic(IHotspotRepository hotspotRepository, IHotspotValidator validator)
         {
-            OFLogger.Log("Evaluating hotspots...");
-            return hotspots.Select(h=>h.Id).ToArray();
+            _validator = validator;
+            _allHotspots = hotspotRepository.GetAllHotspots();
         }
+
+        public bool TryConsume(string id)
+        {
+            var hotspot = Array.Find(_allHotspots, h => h.Id == id);
+            if (hotspot is not { Type: HotspotType.Item }) 
+                return false;
+            
+            _consumedHotspotIds.Add(id);
+            return true;
+        }
+        
+        public HotspotData GetHotspotData(string id) =>
+            Array.Find(_allHotspots, h => h.Id == id);
+
+        public bool IsConsumed(string hotspotId) =>
+            _consumedHotspotIds.Contains(hotspotId);
+
+        public string[] GetConsumedHotspotIds() =>
+            _consumedHotspotIds.ToArray();
+
+        public string[] GetTransitionTargets(string hotspotId)
+        {
+            var available = _allHotspots
+                .Where(h => h.LocationId == hotspotId
+                            && h.Type == HotspotType.Transition
+                            && !string.IsNullOrEmpty(h.TargetLocationId))
+                .Select(h => h.TargetLocationId)
+                .ToArray();
+
+            return available;
+        }
+
+        public string[] GetAvailableHotspots(string locationId)
+        {
+            var available = _allHotspots
+                .Where(h => h.LocationId == locationId
+                            && !IsConsumed(h.Id)
+                            && _validator.IsAvalible(h)).Select(h => h.Id)
+                .ToArray();
+
+            return available;
+        }
+
+        public void LoadSnapshot(HotspotLogicSnapshot snapshot) =>
+            _consumedHotspotIds = new HashSet<string>(snapshot.ConsumedItemIds);
+
+        public HotspotLogicSnapshot GetSnapshot() =>
+            new(GetConsumedHotspotIds());
+
+        public void Reset() =>
+            _consumedHotspotIds.Clear();
+    }
+
+    public readonly struct HotspotLogicSnapshot
+    {
+        public readonly string[] ConsumedItemIds;
+
+        public HotspotLogicSnapshot(string[] consumedItemIds) =>
+            ConsumedItemIds = consumedItemIds;
     }
 }

@@ -1,16 +1,25 @@
-using System;
-
 namespace OnlyFarms.Locations.Domain
 {
-    [Serializable]
     public class HotspotData
     {
-        public string Id;
-        public HotspotType Type;
-        public ActivationCondition Condition;
-        public string ConditionValue;
-        public string TargetLocationId;
-        
+        public readonly string Id;
+        public readonly HotspotType Type;
+        public readonly ActivationCondition Condition;
+        public readonly string ConditionValue;
+        public readonly string TargetLocationId;
+        public readonly string LocationId;
+
+        public HotspotData(string id, HotspotType type, ActivationCondition condition, string conditionValue,
+            string targetLocationId, string locationId)
+        {
+            Id = id;
+            Type = type;
+            Condition = condition;
+            ConditionValue = conditionValue;
+            TargetLocationId = targetLocationId;
+            LocationId = locationId;
+        }
+
         public override string ToString() =>
             $"HotspotData(Id={Id}, Type={Type}, Condition={Condition}, ConditionValue={ConditionValue}, TargetLocationId={TargetLocationId})";
     }

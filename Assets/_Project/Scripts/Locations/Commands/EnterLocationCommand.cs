@@ -10,7 +10,7 @@ namespace OnlyFarms.Locations.Commands
 
         public override UniTask Execute(AsyncToken token = default)
         {
-            Engine.GetService<LocationService>()?.Enter(LocationId.Value);
+            Engine.GetService<LocationService>()?.Enter(LocationId.Value, token);
 
             return UniTask.CompletedTask;
         }
