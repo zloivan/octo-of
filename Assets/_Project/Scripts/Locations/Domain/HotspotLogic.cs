@@ -47,12 +47,12 @@ namespace OnlyFarms.Locations.Domain
             return available;
         }
 
-        public string[] GetAvailableHotspots(string locationId)
+        public HotspotData[] GetAvailableHotspots(string locationId)
         {
             var available = _allHotspots
                 .Where(h => h.LocationId == locationId
                             && !IsConsumed(h.Id)
-                            && _validator.IsAvalible(h)).Select(h => h.Id)
+                            && _validator.IsAvalible(h))
                 .ToArray();
 
             return available;

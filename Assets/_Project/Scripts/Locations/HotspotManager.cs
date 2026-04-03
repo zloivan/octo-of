@@ -1,5 +1,6 @@
 using System.Linq;
 using Naninovel;
+using OnlyFarms.Locations.Domain;
 using OnlyFarms.Locations.Input;
 using OnlyFarms.Locations.UI;
 using UnityEngine;
@@ -25,15 +26,15 @@ namespace OnlyFarms.Locations
         //  реально нужно этому классу, ссылки на полные структуры данных тут лишние
 
         public async UniTask LoadAsync(AssetReference hotspotParentPrefabRef,
-            string[] activeIds, float duration, AsyncToken ct)
+            HotspotData[] activeHotspots, float duration, AsyncToken ct)
         {
             Unload();
 
             _mouseInput.Clear();
-            
+
             if (hotspotParentPrefabRef == null || !hotspotParentPrefabRef.RuntimeKeyIsValid())
                 return;
-            
+
             var handle = Addressables.LoadAssetAsync<GameObject>(hotspotParentPrefabRef);
             var prefab = await handle.Task.AsUniTask();
 
@@ -45,11 +46,14 @@ namespace OnlyFarms.Locations
 
             foreach (var view in _hotspotViews)
             {
-                var active = activeIds.Contains(view.GetId());
+                var spot = activeHotspots.FirstOrDefault(h => h.Id == view.GetId());
+                var active = spot != null;
+                
                 view.gameObject.SetActive(active);
                 if (active)
                 {
                     _mouseInput.Register(view);
+                    view.SetShimmer(spot.Type == HotspotType.Item);
                 }
             }
 

@@ -24,15 +24,6 @@ namespace OnlyFarms.Locations.UI
 
         private MaterialPropertyBlock _mpb;
 
-        private void Start()
-        {
-            if (_outlineMaterial != null)
-                _spriteRenderer.material = _outlineMaterial;
-
-            SetBrightness(.5f);
-            SetDash(false);
-        }
-
         public void SetBrightness(float brightness)
         {
             _mpb ??= new MaterialPropertyBlock();
@@ -61,6 +52,7 @@ namespace OnlyFarms.Locations.UI
             {
                 _mpb.SetFloat(DashSpeedId, speed);
             }
+
             _spriteRenderer.SetPropertyBlock(_mpb);
         }
 
@@ -89,7 +81,15 @@ namespace OnlyFarms.Locations.UI
         public void SetInteractable(bool isEnabled) =>
             _collider.enabled = isEnabled;
 
-        public void SetShimmer(bool isEnabled) =>
+        public void SetShimmer(bool isEnabled)
+        {
             _spriteRenderer.material = isEnabled ? _shimmerMaterial : _outlineMaterial;
+
+            if (!isEnabled)
+            {
+                SetBrightness(.5f);
+                SetDash(false);
+            }
+        }
     }
 }

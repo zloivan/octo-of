@@ -50,7 +50,7 @@ MonoBehaviour:
   _spriteRenderer: {fileID: 2950232148582612798}
   _collider: {fileID: 4329507527295281806}
   _outlineMaterial: {fileID: 2100000, guid: 6101c391f5ce84853b270752a1d56dfc, type: 2}
-  _shimmerMaterial: {fileID: 2100000, guid: c834e9c3a4ca942e29c1f7823cf4229c, type: 2}
+  _shimmerMaterial: {fileID: 2100000, guid: f41392e2c289e4d6eb276baaa5ffeb23, type: 2}
 --- !u!212 &2950232148582612798
 SpriteRenderer:
   m_ObjectHideFlags: 0
