@@ -46,6 +46,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e4ac692dfe24ba5a58d0fba63115906, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _sweepDelay: 5
   _id: hotspot1
   _spriteRenderer: {fileID: 2950232148582612798}
   _collider: {fileID: 4329507527295281806}

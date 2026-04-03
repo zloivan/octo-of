@@ -48,7 +48,7 @@ Material:
     - _PulseSpeed: 1.5
     - _SweepAngle: 30
     - _SweepDelay: 2
-    - _SweepFrequency: 0.15
+    - _SweepFrequency: 0.25
     - _SweepSpeed: 0.7
     - _SweepWidth: 0.15
     - _ZWrite: 0

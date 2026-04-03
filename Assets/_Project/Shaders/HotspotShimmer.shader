@@ -17,9 +17,8 @@ Shader "OnlyFarms/HotspotShimmer"
         _SweepColor ("Sweep Color", Color) = (1,1,1,0.8)
         _SweepAngle ("Sweep Angle", Float) = 30.0
         _SweepWidth ("Sweep Width", Range(0,1)) = 0.15
-        _SweepSpeed ("Sweep Speed", Float) = 1.8
         _SweepFrequency("Sweep Frequency",Float) = 0.25
-        _SweepDelay ("Sweep Delay", Float) = 1.5
+        _SweepSpeed ("Sweep Speed", Float) = 1.8
     }
 
     SubShader
@@ -72,9 +71,8 @@ Shader "OnlyFarms/HotspotShimmer"
                 half4 _SweepColor;
                 float _SweepAngle;
                 float _SweepWidth;
-                float _SweepSpeed;
                 float _SweepFrequency;
-                float _SweepDelay;
+                float _SweepSpeed;
             CBUFFER_END
 
             Varyings vert(Attributes IN)
@@ -107,15 +105,13 @@ Shader "OnlyFarms/HotspotShimmer"
                 float2 sweepDir = float2(cos(rad), sin(rad));
                 float proj = dot(uv - 0.5, sweepDir) + 0.5;
 
-                // Реальное время внутри текущего периода [0, 1/_SweepFrequency]
-                float periodTime = frac(_Time.y * _SweepFrequency) / _SweepFrequency;
+                float period = 1.0 / max(_SweepFrequency, 0.0001);
+                float periodTime = frac(_Time.y * _SweepFrequency) * period;
 
-                // Вычитаем delay — до его истечения sweep неактивен
-                float activeTime = periodTime - _SweepDelay;
-                if (activeTime < 0.0)
-                    return 0.0;
+                float S = abs(cos(rad)) + abs(sin(rad));
+                float projMin = 0.5 - 0.5 * S - _SweepWidth;
 
-                float sweepPos = activeTime * _SweepSpeed - _SweepWidth;
+                float sweepPos = projMin + periodTime * _SweepSpeed;
                 float dist = abs(proj - sweepPos);
                 return saturate(1.0 - dist / max(_SweepWidth, 0.0001));
             }
