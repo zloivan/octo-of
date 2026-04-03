@@ -34,9 +34,7 @@ namespace OnlyFarms.Locations.Input
 
         public void Clear()
         {
-            // OnHotspotClicked = null;
-            // OnHotspotHovered = null;
-            // OnHotspotHoverExited = null;
+            OnHotspotHoverExited?.Invoke(string.Empty);
         }
     }
 }

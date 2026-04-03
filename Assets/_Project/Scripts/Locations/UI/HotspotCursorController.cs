@@ -21,7 +21,7 @@ namespace OnlyFarms.Locations.UI
             _hotspotInput.OnHotspotHoverExited += ResetCursorToDefault;
         }
 
-        private static void ResetCursorToDefault(string hotspotId) =>
+        private void ResetCursorToDefault(string hotspotId) =>
             Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
 
         private void UpdateCursorOnHover(string hotspotId) =>

@@ -49,7 +49,7 @@ MonoBehaviour:
   _id: hotspot1
   _spriteRenderer: {fileID: 2950232148582612798}
   _collider: {fileID: 4329507527295281806}
-  _outlineMaterial: {fileID: 2100000, guid: bbf5bd0aad9814542ae022882c4379a4, type: 2}
+  _outlineMaterial: {fileID: 2100000, guid: 6101c391f5ce84853b270752a1d56dfc, type: 2}
   _shimmerMaterial: {fileID: 2100000, guid: c834e9c3a4ca942e29c1f7823cf4229c, type: 2}
 --- !u!212 &2950232148582612798
 SpriteRenderer:

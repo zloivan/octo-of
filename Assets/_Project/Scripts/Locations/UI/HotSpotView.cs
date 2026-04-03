@@ -1,4 +1,5 @@
 using System;
+using OnlyFarms.Utilities;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -20,6 +21,14 @@ namespace OnlyFarms.Locations.UI
 
         private MaterialPropertyBlock _mpg;
 
+        private void Start()
+        {
+            if (_outlineMaterial != null)
+                _spriteRenderer.material = _outlineMaterial;
+            
+            SetBrightness(.5f);
+        }
+
         public void SetBrightness(float brightness)
         {
             _mpg ??= new MaterialPropertyBlock();
@@ -28,21 +37,26 @@ namespace OnlyFarms.Locations.UI
             _mpg.SetFloat(BrightnessId, brightness);
             _spriteRenderer.SetPropertyBlock(_mpg);
         }
-        
+
         public string GetId() =>
             _id;
 
-        public void OnPointerEnter(PointerEventData eventData) =>
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            SetBrightness(5f);
             OnHovered?.Invoke();
+            OFLogger.Log("Pointer Enter");
+        }
 
-        public void OnPointerExit(PointerEventData eventData) =>
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            SetBrightness(.5f);
             OnHoverExited?.Invoke();
+            OFLogger.Log("Pointer Exit");
+        }
 
         public void OnPointerClick(PointerEventData eventData) =>
             OnClicked?.Invoke();
-
-        void OnMouseDown() =>
-            Debug.Log("Physics hit OK");
 
         public void SetInteractable(bool isEnabled) =>
             _collider.enabled = isEnabled;

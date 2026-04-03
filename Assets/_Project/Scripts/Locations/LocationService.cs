@@ -89,7 +89,7 @@ namespace OnlyFarms.Locations
             var availableHotpots = _hotspotLogic.GetAvailableHotspots(locationId);
             var bg = await _backgroundManager.GetOrAddActor(LOCATION_ACTOR);
             bg.ChangeVisibility(true,
-                new Tween(0), token: ct);
+                new Tween(0), token: ct).Forget();
 
             await UniTask.WhenAll(
                 bg.ChangeAppearance(definition.BackgroundName,
@@ -98,7 +98,7 @@ namespace OnlyFarms.Locations
                     definition.HotspotPrefabRef,
                     availableHotpots,
                     definition.TransitionDuration,
-                    ct.CancellationToken)
+                    ct)
             );
 
             OnLocationEntered?.Invoke(_locationLogic.GetCurrentLocation());

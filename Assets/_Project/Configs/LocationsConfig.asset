@@ -42,7 +42,7 @@ MonoBehaviour:
       Condition: 0
       ConditionValue: false
       _targetLocationId: 
-    TransitionDuration: 0.3
+    TransitionDuration: 2
   - Id: test_location_2
     BackgroundRef:
       m_AssetGUID: cb61671860b9349088e45382ef8d6421
