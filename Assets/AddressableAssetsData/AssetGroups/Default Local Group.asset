@@ -15,6 +15,11 @@ MonoBehaviour:
   m_GroupName: Default Local Group
   m_GUID: e4745b242e2624ac79ddc320a76669f2
   m_SerializeEntries:
+  - m_GUID: 0a668283e7e5249bca4cdf8e34851886
+    m_Address: Assets/_Project/Audio/click_movement_back.wav
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2c98f0ee0078c4218bec120a09897fd6
     m_Address: Assets/_Project/Art/Static/Tests/Alicias_Room_Day.mp4
     m_ReadOnly: 0
@@ -35,6 +40,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a1ab1903fe7a14dbaa1b146678019b92
+    m_Address: Assets/_Project/Audio/click_movement_forward.wav
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a7abd4fe88084440ab78255c406976f3
     m_Address: Assets/_Project/Art/Static/Tests/Green-sprite.png
     m_ReadOnly: 0
@@ -42,6 +52,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: cb61671860b9349088e45382ef8d6421
     m_Address: Assets/_Project/Art/Static/Tests/Day1_static6_1.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f924f09f2107943599828fc498b1627b
+    m_Address: Assets/_Project/Audio/click_object.wav
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

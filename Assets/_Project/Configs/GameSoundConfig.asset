@@ -9,8 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f5c8f59ee93e4d29a558cf4cdf4cfcd3, type: 3}
-  m_Name: GameConfig
+  m_Script: {fileID: 11500000, guid: 6708e65cb2fe454ba0cc3b39838c8367, type: 3}
+  m_Name: GameSoundConfig
   m_EditorClassIdentifier: 
-  LocationConfig: {fileID: 11400000, guid: b995f8a32821d4218bc039f136702825, type: 2}
-  SoundConfig: {fileID: 11400000, guid: 6061e40ac2d724d8c8c3ffdb6ca84781, type: 2}
+  TransitionForwardAudioId: click_movement_forward
+  TransitionBackAudioId: click_movement_back
+  ItemPickupAudioId: click_object

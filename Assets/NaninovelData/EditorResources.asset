@@ -167,3 +167,14 @@ MonoBehaviour:
     - name: Alicias_Room_Day
       pathPrefix: Backgrounds/location
       guid: 2c98f0ee0078c4218bec120a09897fd6
+  - Id: Audio
+    Resources:
+    - name: click_object
+      pathPrefix: Audio
+      guid: f924f09f2107943599828fc498b1627b
+    - name: click_movement_back
+      pathPrefix: Audio
+      guid: 0a668283e7e5249bca4cdf8e34851886
+    - name: click_movement_forward
+      pathPrefix: Audio
+      guid: a1ab1903fe7a14dbaa1b146678019b92

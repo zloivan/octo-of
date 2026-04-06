@@ -7,5 +7,6 @@ namespace OnlyFarms.Core
     public class GameConfig : Configuration
     {
         public LocationConfigSO LocationConfig;
+        public GameSoundConfigSO SoundConfig;
     }
 }
