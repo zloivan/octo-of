@@ -144,6 +144,9 @@ MonoBehaviour:
     - name: ScriptNavigatorUI
       pathPrefix: UI
       guid: 735d6aa767879aa469134858c5b2f0a7
+    - name: BackButtonUI
+      pathPrefix: UI
+      guid: c02767671aef74b949900b3b033c9832
   - Id: Scripts
     Resources:
     - name: Test

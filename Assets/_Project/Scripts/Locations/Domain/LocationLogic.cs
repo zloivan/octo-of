@@ -24,20 +24,22 @@ namespace OnlyFarms.Locations.Domain
             _locationHistoryStack.Push(locationId);
         }
 
-        public void GoBack()
+        public string GoBack()
         {
             if (!CanGoBack())
-                return;
+                return _currentLocation.Id;
 
             _locationHistoryStack.Pop();
             _currentLocation = GetLocation(_locationHistoryStack.Peek());
+            
+            return _currentLocation.Id;
         }
 
         public LocationData GetCurrentLocation() =>
             _currentLocation;
 
         public bool CanGoBack() =>
-            _locationHistoryStack.Count > 1;
+            _locationHistoryStack.Count > 1 && _currentLocation.HasBackButton;
 
         public LocationData GetLocation(string locationId) =>
             Array.Find(_locationsArray, l => l.Id == locationId);

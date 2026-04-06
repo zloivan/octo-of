@@ -19,7 +19,7 @@ namespace OnlyFarms.Locations
     public class LocationService : IStatefulService<GameStateMap>
     {
         private const string LOCATION_ACTOR = "location";
-        public event Action<LocationData> OnLocationEntered;
+        public event Action<LocationData> OnLocationRenderComplete;
         public event Action OnNavigatedForward;
         public event Action OnNavigatedBack;
 
@@ -55,7 +55,8 @@ namespace OnlyFarms.Locations
 
             _hotspotManager = new HotspotManager(mouseInput);
             _locationHotspotController = new LocationHotspotController(this, mouseInput);
-            _hotspotCursorController = new HotspotCursorController(mouseInput, _config.MouseTexture, _config.MouseTextureHotspot);
+            _hotspotCursorController =
+                new HotspotCursorController(mouseInput, _config.MouseTexture, _config.MouseTextureHotspot);
 
             ApplyInputWorkaroundsAsync().Forget();
 
@@ -87,12 +88,18 @@ namespace OnlyFarms.Locations
                 Debug.LogError("LocationService failed to enter location. Definition not found for id: " + locationId);
                 return;
             }
-            
+
             _locationLogic.Enter(locationId);
-            
+            await RenderLocation(locationId, ct);
+        }
+
+        private async UniTask RenderLocation(string locationId, AsyncToken ct)
+        {
+            var definition = _config.GetLocationDefinition(locationId);
+
             var availableHotpots = _hotspotLogic.GetAvailableHotspots(locationId);
             var bg = await _backgroundManager.GetOrAddActor(LOCATION_ACTOR);
-            
+
             bg.ChangeVisibility(true,
                 new Tween(0), token: ct).Forget();
 
@@ -106,7 +113,7 @@ namespace OnlyFarms.Locations
                     ct)
             );
 
-            OnLocationEntered?.Invoke(_locationLogic.GetCurrentLocation());
+            OnLocationRenderComplete?.Invoke(_locationLogic.GetCurrentLocation());
 
             OFLogger.Log($"LocationService entered {_locationLogic.GetCurrentLocation().Id}");
         }
@@ -119,11 +126,11 @@ namespace OnlyFarms.Locations
                 return;
             }
 
-            _locationLogic.GoBack();
+            var backLocationId = _locationLogic.GoBack();
             OnNavigatedBack?.Invoke();
-            
-            OFLogger.Log($"LocationService go back to: {_locationLogic.GetCurrentLocation().Id}");
-            await Enter(_locationLogic.GetCurrentLocation().Id, ct);
+
+            OFLogger.Log($"LocationService go back to: {backLocationId}");
+            await RenderLocation(backLocationId, ct);
         }
 
         public void OnHotspotClicked(string hotspotId)
@@ -144,13 +151,13 @@ namespace OnlyFarms.Locations
                         OFLogger.Log($"LocationService consumed item {hotspotId}");
                         break;
                     }
+
                     break;
                 case HotspotType.MiniGame:
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            
         }
 
         public void SaveServiceState(GameStateMap stateMap)
@@ -184,15 +191,18 @@ namespace OnlyFarms.Locations
                 state.LocationHistoryArray ?? Array.Empty<string>()));
 
             _isInFreeRoam = state.IsInFreeRoam;
-            
+
             if (!string.IsNullOrEmpty(state.CurrentLocationId) && state.IsInFreeRoam)
-                Enter(state.CurrentLocationId, CancellationToken.None).Forget();
+                RenderLocation(state.CurrentLocationId, CancellationToken.None).Forget();
 
             return UniTask.CompletedTask;
         }
 
         public string GetCurrentLocationId() =>
             _locationLogic.GetCurrentLocation()?.Id;
+        
+        public bool CanGoBack() =>
+            _locationLogic.CanGoBack();
 
         //TODO: КОСТЫЛЬ, ИСПРАВЬ ПОЖАЛУЙСТА вынести отсюда или найти хорошее решение внтури Naninovel
         private async UniTask ApplyInputWorkaroundsAsync()
