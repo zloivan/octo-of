@@ -102,3 +102,7 @@ InitTestScene*.unity*
 /Assets/NaninovelData/Transient*
 # Transient artifacts of the external tools.
 /Assets/NaninovelData/.nani/Transient*
+
+# Profiler snapshots
+*.snap
+*.data
