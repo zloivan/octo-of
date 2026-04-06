@@ -44,7 +44,8 @@ namespace OnlyFarms.Locations
         public UniTask InitializeService()
         {
             _locationLogic = new LocationLogic(_config);
-            _hotspotLogic = new HotspotLogic(_config, new AlwaysAvailableHotspotValidator());
+            var questService = Engine.GetService<QuestService>();
+            _hotspotLogic = new HotspotLogic(_config, new HotspotValidator(questService));
 
             //TODO: Явно не обязанность этого сервиса, он должен только распределить обязанности
             //     временное решение, явно кто то другой должен отвечать за спаун и проверку подходит ли текущая локация или нет

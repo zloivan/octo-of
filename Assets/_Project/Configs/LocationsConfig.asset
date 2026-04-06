@@ -39,8 +39,13 @@ MonoBehaviour:
       _targetLocationId: test_location_2
     - Id: hotspot2
       Type: 2
-      Condition: 0
-      ConditionValue: false
+      Condition: 1
+      ConditionValue: test_quest_wrong
+      _targetLocationId: 
+    - Id: hotspot3
+      Type: 2
+      Condition: 1
+      ConditionValue: test_quest
       _targetLocationId: 
     TransitionDuration: 3
   - Id: test_location_2

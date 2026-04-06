@@ -52,7 +52,7 @@ namespace OnlyFarms.Locations.Domain
             var available = _allHotspots
                 .Where(h => h.LocationId == locationId
                             && !IsConsumed(h.Id)
-                            && _validator.IsAvalible(h))
+                            && _validator.IsAvailable(h))
                 .ToArray();
 
             return available;
