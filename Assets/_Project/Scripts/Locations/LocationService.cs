@@ -93,7 +93,6 @@ namespace OnlyFarms.Locations
             await RenderLocation(locationId, ct);
         }
 
-
         //BUG: Possible double rendering of same position, check and fix if visible
         private async UniTask RenderLocation(string locationId, AsyncToken ct)
         {
@@ -194,6 +193,8 @@ namespace OnlyFarms.Locations
 
             _isInFreeRoam = state.IsInFreeRoam;
 
+            //TODO: Кажется тут происходит много всего IF, кажется что тут закостылено.
+            // Нужно подумать как это сделать чище
             if (!string.IsNullOrEmpty(state.CurrentLocationId) && state.IsInFreeRoam)
             {
                 Engine.GetService<IScriptPlayer>().Stop();
