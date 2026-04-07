@@ -7,6 +7,7 @@ namespace OnlyFarms.Locations
     [CreateAssetMenu(fileName = "New Location Config", menuName = "Configs/Locations/Location Config", order = 0)]
     public class LocationConfigSO : ScriptableObject, ILocationRepository, IHotspotRepository
     {
+        public LocationDefinition StartingLocation;
         public LocationDefinition[] Locations;
         public Texture2D MouseTexture;
         public Vector2 MouseTextureHotspot;

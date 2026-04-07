@@ -30,16 +30,20 @@ namespace OnlyFarms.Locations.Commands
             var scriptPlayer = Engine.GetService<IScriptPlayer>();
             if (scriptPlayer == null)
                 throw new NullReferenceException("Script player service not found");
-            
+
             await new HideAllActors().Execute(token);
 
-            var locationId = Assigned(Id) ? Id.Value : locationService.GetCurrentLocationId();
+            var defaultLocationId = string.IsNullOrEmpty(locationService.GetCurrentLocationId())
+                ? locationService.GetStartingLocation().Id
+                : locationService.GetCurrentLocationId();
+            
+            var locationId = Assigned(Id) ? Id.Value : defaultLocationId;
             await locationService.Enter(locationId, token);
             locationService.SetFreeRoamMode(true);
 
             var returnLabel = Assigned(ReturnLabel) ? ReturnLabel.Value : null;
             questService.SetReturnPoint(ReturnScript.Value, returnLabel);
-            
+
             scriptPlayer.Stop();
         }
     }

@@ -152,6 +152,9 @@ MonoBehaviour:
     - name: Test
       pathPrefix: Scripts
       guid: a64e6a490f16f4796932035418db5376
+    - name: Test_2
+      pathPrefix: Scripts
+      guid: 89df879b0d4c0445b9facbe25bd9b83f
   - Id: Backgrounds/34e695bc-5c24-4983-91f0-2a139bb249f2
     Resources:
     - name: test

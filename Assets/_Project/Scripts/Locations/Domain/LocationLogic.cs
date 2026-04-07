@@ -56,8 +56,9 @@ namespace OnlyFarms.Locations.Domain
             _currentLocation = !string.IsNullOrEmpty(snapshot.CurrentLocationId)
                 ? GetLocation(snapshot.CurrentLocationId)
                 : null;
-            
-            _locationHistoryStack = new Stack<string>(snapshot.LocationHistory);
+
+            var history = snapshot.LocationHistory ?? Array.Empty<string>();
+            _locationHistoryStack = new Stack<string>(history.Reverse());
         }
 
         public void Reset()

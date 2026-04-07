@@ -1,6 +1,7 @@
 using System.Threading;
 using Naninovel;
 using OnlyFarms.Locations;
+using OnlyFarms.Locations.Commands;
 using OnlyFarms.Locations.Domain;
 using OnlyFarms.Utilities;
 
@@ -19,31 +20,31 @@ namespace OnlyFarms.Tests
         {
             Engine.GetService<LocationService>()?.Enter(locationId, CancellationToken.None);
         }
-        
+
         [ConsoleCommand("reset")]
         public static void ResetConsole()
         {
             Engine.GetService<LocationService>()?.ResetService();
         }
-        
+
         [ConsoleCommand("consume")]
         public static void ConsumeConsole(string itemId)
         {
             Engine.GetService<LocationService>()?.OnHotspotClicked(itemId);
         }
-        
+
         [ConsoleCommand("save")]
         public static void SaveConsole()
         {
             Engine.GetService<IStateManager>()?.QuickSave();
         }
-        
+
         [ConsoleCommand("load")]
         public static void LoadConsole()
         {
             Engine.GetService<IStateManager>()?.QuickLoad();
         }
-        
+
         [ConsoleCommand("currentLocation")]
         public static void CurrentLocationConsole()
         {
@@ -64,6 +65,31 @@ namespace OnlyFarms.Tests
             questService.OnAllQuestsCompleted().Forget();
             OFLogger.Log("All quests completed: " + questService.IsQuestCompleted("test_quest"));
         }
+
+        [ConsoleCommand("exitNarrative")]
+        public static void ExitNarrativeConsole(string locationId, string returnScript, string returnLabel = null)
+        {
+            var command = new ExitNarativeCommand
+            {
+                Id = locationId,
+                ReturnScript = returnScript,
+                ReturnLabel = returnLabel
+            };
+            command.Execute().Forget();
+        }
+
+        [ConsoleCommand("printHistory")]
+        public static void PrintLocationHistory()
+        {
+            OFLogger.Log("Location History:");
+            var locationService = Engine.GetService<LocationService>();
+            if (locationService == null)
+            {
+                OFLogger.Log("Location service not found");
+                return;
+            }
+
+            OFLogger.Log(locationService.PrintLocationHistory());
+        }
     }
-    
 }

@@ -178,12 +178,12 @@ namespace OnlyFarms.Locations
             stateMap.SetState(state);
         }
 
-        public UniTask LoadServiceState(GameStateMap stateMap)
+        public async UniTask LoadServiceState(GameStateMap stateMap)
         {
             var state = stateMap.GetState<LocationServiceState>();
 
             if (state == null)
-                return UniTask.CompletedTask;
+                return;
 
             _hotspotLogic.LoadSnapshot(new HotspotLogicSnapshot(
                 state.ConsumedItemsIdArray ?? Array.Empty<string>()));
@@ -194,11 +194,15 @@ namespace OnlyFarms.Locations
 
             _isInFreeRoam = state.IsInFreeRoam;
 
-            //TODO: TESTING LOGIC
-            // if (!string.IsNullOrEmpty(state.CurrentLocationId) && state.IsInFreeRoam)
-            //     RenderLocation(state.CurrentLocationId, CancellationToken.None).Forget();
-
-            return UniTask.CompletedTask;
+            if (!string.IsNullOrEmpty(state.CurrentLocationId) && state.IsInFreeRoam)
+            {
+                Engine.GetService<IScriptPlayer>().Stop();
+                await RenderLocation(state.CurrentLocationId, CancellationToken.None);
+            }
+            else
+            {
+                _hotspotManager.Unload();
+            }
         }
 
         public string GetCurrentLocationId() =>
@@ -220,10 +224,19 @@ namespace OnlyFarms.Locations
                 continueUI.GetComponent<GraphicRaycaster>().enabled = false;
         }
 
+        public string PrintLocationHistory()
+        {
+            var history = _locationLogic.GetSnapshot().LocationHistory;
+            return string.Join(" -> ", history);
+        }
+
+        public LocationDefinition GetStartingLocation() =>
+            _config.StartingLocation;
+
         public async UniTask SetFreeRoamMode(bool value, AsyncToken token = default)
         {
             _isInFreeRoam = value;
-            
+
             if (!value)
             {
                 _hotspotManager.Unload();

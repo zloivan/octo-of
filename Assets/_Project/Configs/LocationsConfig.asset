@@ -12,6 +12,42 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1ff058743474cd3bf1331ce7fb73ed0, type: 3}
   m_Name: LocationsConfig
   m_EditorClassIdentifier: 
+  StartingLocation:
+    Id: test_location
+    BackgroundRef:
+      m_AssetGUID: 9fd9ea5e5128b4977b52e1ab66fd1dd6
+      m_SubObjectName: 
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    BackgroundName: Alex_Room
+    HotspotPrefabRef:
+      m_AssetGUID: 4bbc0cfe5bb9341ee9954d4fe76e7e22
+      m_SubObjectName: 
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    OnEnterScript: 
+    HasBackButton: 0
+    Hotspots:
+    - Id: hotspot1
+      Type: 0
+      Condition: 0
+      ConditionValue: false
+      _targetLocationId: test_location_2
+    - Id: hotspot2
+      Type: 2
+      Condition: 1
+      ConditionValue: test_quest_wrong
+      _targetLocationId: 
+    - Id: hotspot3
+      Type: 2
+      Condition: 1
+      ConditionValue: test_quest
+      _targetLocationId: 
+    TransitionDuration: 3
   Locations:
   - Id: test_location
     BackgroundRef:
