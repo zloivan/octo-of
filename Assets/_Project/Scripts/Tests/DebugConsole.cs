@@ -1,6 +1,7 @@
 using System.Threading;
 using Naninovel;
 using OnlyFarms.Locations;
+using OnlyFarms.Locations.Domain;
 using OnlyFarms.Utilities;
 
 namespace OnlyFarms.Tests
@@ -48,6 +49,20 @@ namespace OnlyFarms.Tests
         {
             var location = Engine.GetService<LocationService>()?.GetCurrentLocationId();
             OFLogger.Log($"Current Location: {location}");
+        }
+
+        [ConsoleCommand("allQuestsCompleted")]
+        public static void AllQuestsCompleted()
+        {
+            var questService = Engine.GetService<QuestService>();
+            if (questService == null)
+            {
+                OFLogger.Log("Quest service not found");
+                return;
+            }
+
+            questService.OnAllQuestsCompleted().Forget();
+            OFLogger.Log("All quests completed: " + questService.IsQuestCompleted("test_quest"));
         }
     }
     

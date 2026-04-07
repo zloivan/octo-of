@@ -20,6 +20,9 @@ namespace OnlyFarms.Locations.Domain
 
         public void Enter(string locationId)
         {
+            if (_currentLocation!= null &&_currentLocation.Id == locationId)
+                return;
+            
             _currentLocation = GetLocation(locationId);
             _locationHistoryStack.Push(locationId);
         }

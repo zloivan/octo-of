@@ -26,6 +26,7 @@ namespace OnlyFarms.Locations.UI
             _locationService.OnLocationRenderComplete += LocationService_OnLocationRenderComplete;
             _locationService.OnNavigatedBack += Hide;
             _locationService.OnNavigatedForward += Hide;
+            _locationService.OnFreeRoamEnded += Hide;
 
             Hide();
 
@@ -41,6 +42,7 @@ namespace OnlyFarms.Locations.UI
                 _locationService.OnLocationRenderComplete -= LocationService_OnLocationRenderComplete;
                 _locationService.OnNavigatedBack -= Hide;
                 _locationService.OnNavigatedForward -= Hide;
+                _locationService.OnFreeRoamEnded -= Hide;
             }
 
             _backButton.onClick.RemoveListener(OnBackButtonClicked);

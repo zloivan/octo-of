@@ -22,6 +22,7 @@ namespace OnlyFarms.Locations
         public event Action<LocationData> OnLocationRenderComplete;
         public event Action OnNavigatedForward;
         public event Action OnNavigatedBack;
+        public event Action OnFreeRoamEnded;
 
         private readonly LocationConfigSO _config;
         private readonly IBackgroundManager _backgroundManager;
@@ -37,8 +38,6 @@ namespace OnlyFarms.Locations
         {
             _config = gameConfig.LocationConfig;
             _backgroundManager = backgroundManager;
-            //TODO: TESTING
-            _isInFreeRoam = true;
         }
 
         public UniTask InitializeService()
@@ -94,6 +93,8 @@ namespace OnlyFarms.Locations
             await RenderLocation(locationId, ct);
         }
 
+
+        //BUG: Possible double rendering of same position, check and fix if visible
         private async UniTask RenderLocation(string locationId, AsyncToken ct)
         {
             var definition = _config.GetLocationDefinition(locationId);
@@ -193,15 +194,16 @@ namespace OnlyFarms.Locations
 
             _isInFreeRoam = state.IsInFreeRoam;
 
-            if (!string.IsNullOrEmpty(state.CurrentLocationId) && state.IsInFreeRoam)
-                RenderLocation(state.CurrentLocationId, CancellationToken.None).Forget();
+            //TODO: TESTING LOGIC
+            // if (!string.IsNullOrEmpty(state.CurrentLocationId) && state.IsInFreeRoam)
+            //     RenderLocation(state.CurrentLocationId, CancellationToken.None).Forget();
 
             return UniTask.CompletedTask;
         }
 
         public string GetCurrentLocationId() =>
             _locationLogic.GetCurrentLocation()?.Id;
-        
+
         public bool CanGoBack() =>
             _locationLogic.CanGoBack();
 
@@ -216,6 +218,18 @@ namespace OnlyFarms.Locations
             var continueUI = uiManager.GetUI<ContinueInputUI>();
             if (continueUI != null)
                 continueUI.GetComponent<GraphicRaycaster>().enabled = false;
+        }
+
+        public async UniTask SetFreeRoamMode(bool value, AsyncToken token = default)
+        {
+            _isInFreeRoam = value;
+            
+            if (!value)
+            {
+                _hotspotManager.Unload();
+                var bg = await _backgroundManager.GetOrAddActor(LOCATION_ACTOR);
+                bg.ChangeVisibility(false, new Tween(0.3f), token: token).Forget();
+            }
         }
     }
 }
