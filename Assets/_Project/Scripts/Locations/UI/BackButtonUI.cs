@@ -15,7 +15,7 @@ namespace OnlyFarms.Locations.UI
 
         public override UniTask Initialize()
         {
-            Debug.Log("Initializing BackButtonUI...");
+            OFLogger.Log("Initializing BackButtonUI...");
             _locationService = Engine.GetService<LocationService>();
             if (_locationService == null)
             {
@@ -24,7 +24,7 @@ namespace OnlyFarms.Locations.UI
             }
 
             _backButton.onClick.AddListener(OnBackButtonClicked);
-            _locationService.OnLocationRenderComplete += LocationService_OnLocationRenderComplete;
+            _locationService.OnLocationEnterCompleted += LocationServiceOnLocationEnterCompleted;
             _locationService.OnNavigatedBack += Hide;
             _locationService.OnNavigatedForward += Hide;
             _locationService.OnFreeRoamEnded += Hide;
@@ -40,7 +40,7 @@ namespace OnlyFarms.Locations.UI
 
             if (_locationService != null)
             {
-                _locationService.OnLocationRenderComplete -= LocationService_OnLocationRenderComplete;
+                _locationService.OnLocationEnterCompleted -= LocationServiceOnLocationEnterCompleted;
                 _locationService.OnNavigatedBack -= Hide;
                 _locationService.OnNavigatedForward -= Hide;
                 _locationService.OnFreeRoamEnded -= Hide;
@@ -49,7 +49,7 @@ namespace OnlyFarms.Locations.UI
             _backButton.onClick.RemoveListener(OnBackButtonClicked);
         }
 
-        private void LocationService_OnLocationRenderComplete(LocationData obj)
+        private void LocationServiceOnLocationEnterCompleted(LocationData obj)
         {
             OFLogger.Log("Location render complete, checking back button visibility...");
             if (_locationService.CanGoBack())

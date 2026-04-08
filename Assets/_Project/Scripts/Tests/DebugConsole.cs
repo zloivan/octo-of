@@ -3,6 +3,7 @@ using Naninovel;
 using OnlyFarms.Locations;
 using OnlyFarms.Locations.Commands;
 using OnlyFarms.Locations.Domain;
+using OnlyFarms.Locations.Services;
 using OnlyFarms.Utilities;
 
 namespace OnlyFarms.Tests
@@ -45,7 +46,7 @@ namespace OnlyFarms.Tests
             Engine.GetService<IStateManager>()?.QuickLoad();
         }
 
-        [ConsoleCommand("currentLocation")]
+        [ConsoleCommand("printLocation")]
         public static void CurrentLocationConsole()
         {
             var location = Engine.GetService<LocationService>()?.GetCurrentLocationId();
@@ -62,18 +63,15 @@ namespace OnlyFarms.Tests
                 return;
             }
 
-            questService.OnAllQuestsCompleted().Forget();
-            OFLogger.Log("All quests completed: " + questService.IsQuestCompleted("test_quest"));
+            questService.ForceComplete();
         }
 
         [ConsoleCommand("exitNarrative")]
-        public static void ExitNarrativeConsole(string locationId, string returnScript, string returnLabel = null)
+        public static void ExitNarrativeConsole(string locationId)
         {
-            var command = new ExitNarativeCommand
+            var command = new ExitNarrativeCommand
             {
                 Id = locationId,
-                ReturnScript = returnScript,
-                ReturnLabel = returnLabel
             };
             command.Execute().Forget();
         }
@@ -90,6 +88,14 @@ namespace OnlyFarms.Tests
             }
 
             OFLogger.Log(locationService.PrintLocationHistory());
+        }
+        
+        [ConsoleCommand("setOnEnter")]
+        public static void SetOnEnterScript(string locationId, string script)
+        {
+            OFLogger.Log("TEST");
+            Engine.GetService<GameFlowService>()?.SetLocationNarrativeSource(
+                new HardcodedNarrativeSource(locationId, script));
         }
     }
 }

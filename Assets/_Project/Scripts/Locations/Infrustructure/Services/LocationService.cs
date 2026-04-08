@@ -20,7 +20,9 @@ namespace OnlyFarms.Locations
     public class LocationService : IStatefulService<GameStateMap>
     {
         private const string LOCATION_ACTOR = "location";
-        public event Action<LocationData> OnLocationRenderComplete;
+        public event Action<LocationData> OnLocationEnterCompleted;
+        public event Action<LocationData> OnLocationEnterStarted;
+        
         public event Action OnNavigatedForward;
         public event Action OnNavigatedBack;
         public event Action OnFreeRoamEnded;
@@ -35,6 +37,7 @@ namespace OnlyFarms.Locations
         private GraphicRaycaster _continueInputRaycaster;
         private bool _isInFreeRoam;
         private readonly IScriptPlayer _scriptPlayer;
+        private CancellationTokenSource _cts = new ();
 
         public LocationService(GameConfig gameConfig, IBackgroundManager backgroundManager, IScriptPlayer scriptPlayer)
         {
@@ -96,79 +99,44 @@ namespace OnlyFarms.Locations
             await RenderLocation(locationId, ct);
         }
 
-        //TODO: This method do too much, probably implement location renderer class
-        //BUG: Possible double rendering of same position, check and fix if visible
         private async UniTask RenderLocation(string locationId, AsyncToken ct)
         {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = new CancellationTokenSource();
+
+            var linked = CancellationTokenSource.CreateLinkedTokenSource(ct.CancellationToken, _cts.Token);
+            var renderToken = new AsyncToken(linked.Token);
+            
+            
+            OnLocationEnterStarted?.Invoke(_locationLogic.GetCurrentLocation());
+
+            if (renderToken.Canceled)
+                return;
+            
             var definition = _config.GetLocationDefinition(locationId);
-            var availableHotpots = _hotspotLogic.GetAvailableHotspots(locationId);
+            var availableHotspots = _hotspotLogic.GetAvailableHotspots(locationId);
             var bg = await _backgroundManager.GetOrAddActor(LOCATION_ACTOR);
-
+            
+            _hotspotCursorController.ResetCursor();
             _hotspotManager.Unload();
-            bg.ChangeVisibility(true,
-                new Tween(0), token: ct).Forget();
+            
+            bg.ChangeVisibility(true, new Tween(0), token: ct).Forget();
 
-            //if have continue script = load -> bg, script ->hotspots else load -> bg and hotspots in parallel
-            var onEnterScript = _locationLogic.GetCurrentLocation()?.OnEnterScript;
-            if (!string.IsNullOrEmpty(onEnterScript))
-            {
-                await bg.ChangeAppearance(definition.BackgroundName,
-                    new Tween(definition.TransitionDuration), token: ct);
-                
-                await PlayOnEnterScriptAsync(onEnterScript, ct);
-                
-                await _hotspotManager.LoadAsync(
+            await UniTask.WhenAll(
+                bg.ChangeAppearance(definition.BackgroundName,
+                    new Tween(definition.TransitionDuration), token: ct),
+                _hotspotManager.LoadAsync(
                     definition.HotspotPrefabRef,
-                    availableHotpots,
+                    availableHotspots,
                     definition.TransitionDuration,
-                    ct);
-            }
-            else
-            {
-                await UniTask.WhenAll(
-                    bg.ChangeAppearance(definition.BackgroundName,
-                        new Tween(definition.TransitionDuration), token: ct),
-                    _hotspotManager.LoadAsync(
-                        definition.HotspotPrefabRef,
-                        availableHotpots,
-                        definition.TransitionDuration,
-                        ct)
-                );
-            }
+                    ct)
+            );
 
-            OnLocationRenderComplete?.Invoke(_locationLogic.GetCurrentLocation());
-
+            OnLocationEnterCompleted?.Invoke(_locationLogic.GetCurrentLocation());
             OFLogger.Log($"LocationService entered {_locationLogic.GetCurrentLocation().Id}");
         }
         
-        private async UniTask PlayOnEnterScriptAsync(string scriptName, AsyncToken ct)
-        {
-            var scriptManager = Engine.GetService<IScriptManager>();
-            var scriptPlayer = Engine.GetService<IScriptPlayer>();
-
-            await scriptManager.ScriptLoader.LoadOrErr(scriptName, scriptPlayer);
-
-            var tcs = new UniTaskCompletionSource();
-            var scriptStarted = false;
-
-            void OnStopped(Script _)
-            {
-                if (!scriptStarted) 
-                    return; // Stop() внутри Play() для старого скрипта — игнорируем
-                scriptPlayer.OnStop -= OnStopped;
-                tcs.TrySetResult();
-            }
-
-            scriptPlayer.OnStop += OnStopped;
-            SetContinueInputEnabled(true);
-            scriptPlayer.Play(scriptName);
-            scriptStarted = true; // Resume() → Stop() уже отстрелял синхронно внутри Play() выше
-
-            await tcs.Task;
-            SetContinueInputEnabled(false);
-            scriptManager.ScriptLoader.Release(scriptName, scriptPlayer);
-        }
-
         public async UniTask GoBack(AsyncToken ct)
         {
             if (!_locationLogic.CanGoBack())
@@ -252,6 +220,7 @@ namespace OnlyFarms.Locations
             }
             else
             {
+                _hotspotCursorController.ResetCursor();
                 _hotspotManager.Unload();
             }
         }
@@ -283,7 +252,6 @@ namespace OnlyFarms.Locations
                 _continueInputRaycaster.enabled = enabled;
         }
         
-
         public string PrintLocationHistory()
         {
             var history = _locationLogic.GetSnapshot().LocationHistory;
@@ -300,9 +268,13 @@ namespace OnlyFarms.Locations
             
             if (!value)
             {
+                _cts?.Cancel();
+                _hotspotCursorController.ResetCursor();
                 _hotspotManager.Unload();
                 var bg = await _backgroundManager.GetOrAddActor(LOCATION_ACTOR);
                 bg.ChangeVisibility(false, new Tween(0.3f), token: token).Forget();
+                
+                OnFreeRoamEnded?.Invoke();
             }
         }
     }

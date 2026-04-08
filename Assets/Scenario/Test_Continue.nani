@@ -4,7 +4,7 @@ Narrator: "Здесь мы загрузили какой то нарратив �
 ;;@hidePrinter
 ;@hide MainBackground
 
-@exitNarrative returnScript:Test_Continue returnLabel:after_roam
+@exitNarrative test_location
 Narrator: "Этого не должно быть видно сразу."
 
 

@@ -18,6 +18,6 @@ namespace OnlyFarms.Locations
         public float TransitionDuration = 1f;
 
         public LocationData ToLocationData() =>
-            new(Id, OnEnterScript, HasBackButton);
+            new(Id, HasBackButton);
     }
 }

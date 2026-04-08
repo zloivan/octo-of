@@ -1,19 +1,24 @@
 using System;
+using JetBrains.Annotations;
 using Naninovel;
 using Naninovel.Commands;
 using OnlyFarms.Locations.Domain;
+using OnlyFarms.Locations.Services;
 
 namespace OnlyFarms.Locations.Commands
 {
     [CommandAlias("exitNarrative")]
-    public class ExitNarativeCommand : Command
+    public class ExitNarrativeCommand : Command
     {
+        [UsedImplicitly]
         [ParameterAlias(NamelessParameterAlias)]
         public StringParameter Id;
 
-        [ParameterAlias("returnScript"), RequiredParameter]
+        [UsedImplicitly]
+        [ParameterAlias("returnScript")]
         public StringParameter ReturnScript;
 
+        [UsedImplicitly]
         [ParameterAlias("returnLabel")]
         public StringParameter ReturnLabel;
 
@@ -23,9 +28,9 @@ namespace OnlyFarms.Locations.Commands
             if (locationService == null)
                 throw new NullReferenceException("Location service not found");
 
-            var questService = Engine.GetService<QuestService>();
-            if (questService == null)
-                throw new NullReferenceException("Quest service not found");
+            var gameFlowService = Engine.GetService<GameFlowService>();
+            if (gameFlowService == null)
+                throw new NullReferenceException("Game flow service not found");
 
             var scriptPlayer = Engine.GetService<IScriptPlayer>();
             if (scriptPlayer == null)
@@ -33,16 +38,17 @@ namespace OnlyFarms.Locations.Commands
 
             await new HideAllActors().Execute(token);
 
-            var defaultLocationId = string.IsNullOrEmpty(locationService.GetCurrentLocationId())
-                ? locationService.GetStartingLocation().Id
-                : locationService.GetCurrentLocationId();
-            
-            var locationId = Assigned(Id) ? Id.Value : defaultLocationId;
-            await locationService.Enter(locationId, token);
-            locationService.SetFreeRoamMode(true);
+            var locationId = Assigned(Id)
+                ? Id.Value
+                : locationService.GetCurrentLocationId() ?? locationService.GetStartingLocation().Id;
 
-            var returnLabel = Assigned(ReturnLabel) ? ReturnLabel.Value : null;
-            questService.SetReturnPoint(ReturnScript.Value, returnLabel);
+            await locationService.Enter(locationId, token);
+            locationService.SetFreeRoamMode(true).Forget();
+
+            if (Assigned(ReturnScript))
+                gameFlowService.SetSessionSource(new HardcodedSessionsSource(
+                    ReturnScript.Value,
+                    Assigned(ReturnLabel) ? ReturnLabel.Value : null));
 
             scriptPlayer.Stop();
         }

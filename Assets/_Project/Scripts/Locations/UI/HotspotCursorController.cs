@@ -26,6 +26,9 @@ namespace OnlyFarms.Locations.UI
 
         private void UpdateCursorOnHover(string hotspotId) =>
             Cursor.SetCursor(_cursorTexture, _cursorHotspot, CursorMode.Auto);
+        
+        public void ResetCursor() =>
+            Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
 
         public void Dispose()
         {
