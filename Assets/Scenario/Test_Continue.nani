@@ -1,3 +1,12 @@
+@back test
 Narrator: "Здесь мы загрузили какой то нарратив после входа в локацию"
-@hidePrinter
+
+;;@hidePrinter
+;@hide MainBackground
+
+@exitNarrative returnScript:Test_Continue returnLabel:after_roam
+Narrator: "Этого не должно быть видно сразу."
+
+
+
 @stop

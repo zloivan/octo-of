@@ -146,11 +146,25 @@ namespace OnlyFarms.Locations
             var scriptManager = Engine.GetService<IScriptManager>();
             var scriptPlayer = Engine.GetService<IScriptPlayer>();
 
-            Script script = (Script)await scriptManager.ScriptLoader.LoadOrErr(scriptName, scriptPlayer);
+            await scriptManager.ScriptLoader.LoadOrErr(scriptName, scriptPlayer);
+
+            var tcs = new UniTaskCompletionSource();
+            var scriptStarted = false;
+
+            void OnStopped(Script _)
+            {
+                if (!scriptStarted) 
+                    return; // Stop() внутри Play() для старого скрипта — игнорируем
+                scriptPlayer.OnStop -= OnStopped;
+                tcs.TrySetResult();
+            }
+
+            scriptPlayer.OnStop += OnStopped;
             SetContinueInputEnabled(true);
-            //await scriptPlayer.PlayTransient(script.Playlist, ct);
             scriptPlayer.Play(scriptName);
-            //await new HidePrinter().Execute(ct); 
+            scriptStarted = true; // Resume() → Stop() уже отстрелял синхронно внутри Play() выше
+
+            await tcs.Task;
             SetContinueInputEnabled(false);
             scriptManager.ScriptLoader.Release(scriptName, scriptPlayer);
         }
