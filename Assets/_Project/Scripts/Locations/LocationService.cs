@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using Naninovel;
+using Naninovel.Commands;
 using Naninovel.UI;
 using OnlyFarms.Core;
 using OnlyFarms.Locations.Domain;
@@ -31,13 +32,15 @@ namespace OnlyFarms.Locations
         private HotspotLogic _hotspotLogic;
         private LocationHotspotController _locationHotspotController;
         private HotspotCursorController _hotspotCursorController;
-
+        private GraphicRaycaster _continueInputRaycaster;
         private bool _isInFreeRoam;
+        private readonly IScriptPlayer _scriptPlayer;
 
-        public LocationService(GameConfig gameConfig, IBackgroundManager backgroundManager)
+        public LocationService(GameConfig gameConfig, IBackgroundManager backgroundManager, IScriptPlayer scriptPlayer)
         {
             _config = gameConfig.LocationConfig;
             _backgroundManager = backgroundManager;
+            _scriptPlayer = scriptPlayer;
         }
 
         public UniTask InitializeService()
@@ -93,30 +96,63 @@ namespace OnlyFarms.Locations
             await RenderLocation(locationId, ct);
         }
 
+        //TODO: This method do too much, probably implement location renderer class
         //BUG: Possible double rendering of same position, check and fix if visible
         private async UniTask RenderLocation(string locationId, AsyncToken ct)
         {
             var definition = _config.GetLocationDefinition(locationId);
-
             var availableHotpots = _hotspotLogic.GetAvailableHotspots(locationId);
             var bg = await _backgroundManager.GetOrAddActor(LOCATION_ACTOR);
 
+            _hotspotManager.Unload();
             bg.ChangeVisibility(true,
                 new Tween(0), token: ct).Forget();
 
-            await UniTask.WhenAll(
-                bg.ChangeAppearance(definition.BackgroundName,
-                    new Tween(definition.TransitionDuration), token: ct),
-                _hotspotManager.LoadAsync(
+            //if have continue script = load -> bg, script ->hotspots else load -> bg and hotspots in parallel
+            var onEnterScript = _locationLogic.GetCurrentLocation()?.OnEnterScript;
+            if (!string.IsNullOrEmpty(onEnterScript))
+            {
+                await bg.ChangeAppearance(definition.BackgroundName,
+                    new Tween(definition.TransitionDuration), token: ct);
+                
+                await PlayOnEnterScriptAsync(onEnterScript, ct);
+                
+                await _hotspotManager.LoadAsync(
                     definition.HotspotPrefabRef,
                     availableHotpots,
                     definition.TransitionDuration,
-                    ct)
-            );
+                    ct);
+            }
+            else
+            {
+                await UniTask.WhenAll(
+                    bg.ChangeAppearance(definition.BackgroundName,
+                        new Tween(definition.TransitionDuration), token: ct),
+                    _hotspotManager.LoadAsync(
+                        definition.HotspotPrefabRef,
+                        availableHotpots,
+                        definition.TransitionDuration,
+                        ct)
+                );
+            }
 
             OnLocationRenderComplete?.Invoke(_locationLogic.GetCurrentLocation());
 
             OFLogger.Log($"LocationService entered {_locationLogic.GetCurrentLocation().Id}");
+        }
+        
+        private async UniTask PlayOnEnterScriptAsync(string scriptName, AsyncToken ct)
+        {
+            var scriptManager = Engine.GetService<IScriptManager>();
+            var scriptPlayer = Engine.GetService<IScriptPlayer>();
+
+            Script script = (Script)await scriptManager.ScriptLoader.LoadOrErr(scriptName, scriptPlayer);
+            SetContinueInputEnabled(true);
+            //await scriptPlayer.PlayTransient(script.Playlist, ct);
+            scriptPlayer.Play(scriptName);
+            //await new HidePrinter().Execute(ct); 
+            SetContinueInputEnabled(false);
+            scriptManager.ScriptLoader.Release(scriptName, scriptPlayer);
         }
 
         public async UniTask GoBack(AsyncToken ct)
@@ -197,7 +233,7 @@ namespace OnlyFarms.Locations
             // Нужно подумать как это сделать чище
             if (!string.IsNullOrEmpty(state.CurrentLocationId) && state.IsInFreeRoam)
             {
-                Engine.GetService<IScriptPlayer>().Stop();
+                _scriptPlayer.Stop();
                 await RenderLocation(state.CurrentLocationId, CancellationToken.None);
             }
             else
@@ -217,13 +253,22 @@ namespace OnlyFarms.Locations
         {
             Engine.GetService<ICameraManager>().Camera.AddComponent<Physics2DRaycaster>();
 
-
             await UniTask.WaitUntil(() => Engine.Initialized);
             var uiManager = Engine.GetService<IUIManager>();
             var continueUI = uiManager.GetUI<ContinueInputUI>();
             if (continueUI != null)
-                continueUI.GetComponent<GraphicRaycaster>().enabled = false;
+            {
+                _continueInputRaycaster = continueUI.GetComponent<GraphicRaycaster>();
+                SetContinueInputEnabled(false);
+            }
         }
+        
+        private void SetContinueInputEnabled(bool enabled)
+        {
+            if (_continueInputRaycaster != null)
+                _continueInputRaycaster.enabled = enabled;
+        }
+        
 
         public string PrintLocationHistory()
         {
@@ -237,7 +282,8 @@ namespace OnlyFarms.Locations
         public async UniTask SetFreeRoamMode(bool value, AsyncToken token = default)
         {
             _isInFreeRoam = value;
-
+            SetContinueInputEnabled(!value);
+            
             if (!value)
             {
                 _hotspotManager.Unload();

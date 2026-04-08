@@ -100,7 +100,7 @@ MonoBehaviour:
         Culture=neutral, PublicKeyToken=null
       m_SubObjectGUID: 
       m_EditorAssetChanged: 0
-    OnEnterScript: 
+    OnEnterScript: Test_Continue
     HasBackButton: 1
     Hotspots:
     - Id: hotspot4

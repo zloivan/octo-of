@@ -15,6 +15,7 @@ namespace OnlyFarms.Locations.UI
 
         public override UniTask Initialize()
         {
+            Debug.Log("Initializing BackButtonUI...");
             _locationService = Engine.GetService<LocationService>();
             if (_locationService == null)
             {
