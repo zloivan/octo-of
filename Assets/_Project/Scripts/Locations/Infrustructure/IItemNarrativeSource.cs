@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace OnlyFarms.Locations.Domain
 {
     public interface IItemNarrativeSource
@@ -28,21 +30,26 @@ namespace OnlyFarms.Locations.Domain
             _label = label;
         }
 
-        public HardcodedItemNarrativeSource()
-        {
-            _itemId = "hotspot3";
-            _script = "Test_Continue";
-            _label = "continue_here";
-        }
+        public string GetOnUseScript(string itemId) =>
+            itemId == _itemId ? _script : null;
 
-        public string GetOnUseScript(string itemId)
-        {
-            return itemId == _itemId ? _script : null;
-        }
+        public string GetOnUseLabel(string itemId) =>
+            itemId == _itemId ? _label : null;
+    }
 
-        public string GetOnUseLabel(string itemId)
+    public class HardcodedItemNarrativeSourceLivingRoom : IItemNarrativeSource
+    {
+        private readonly Dictionary<string, (string, string)> _map = new()
         {
-            return itemId == _itemId ? _label : null;
-        }
+            { "living_room_secret_2", ("Test_Continue", "secret_2") },
+            { "living_room_secret_3", ("Test_Continue", "secret_3") },
+            { "living_room_secret_4", ("Test_Continue", "secret_4") },
+        };
+
+        public string GetOnUseScript(string itemId) =>
+            _map.TryGetValue(itemId, out var result) ? result.Item1 : null;
+
+        public string GetOnUseLabel(string itemId) =>
+            _map.TryGetValue(itemId, out var result) ? result.Item2 : null;
     }
 }

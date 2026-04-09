@@ -20,8 +20,28 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 122114605bde24f3c9f1becd14eaae29
+    m_Address: Assets/_Project/Prefabs/Hotspots/hotspots_living_room.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 165a7049e99e8469aa4ebfe551f5656f
+    m_Address: Assets/_Project/Art/Static/Tests/Ricks_Room_Day.mp4
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1673f1ed37b69422f860c7e9486b55d4
+    m_Address: Assets/_Project/Art/Static/Tests/Jays_Room.mp4
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2c98f0ee0078c4218bec120a09897fd6
     m_Address: Assets/_Project/Art/Static/Tests/Alicias_Room_Day.mp4
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 36f323484f9084715a5cde6dfa8dfea8
+    m_Address: Assets/_Project/Art/Static/Tests/Kitchen_Day.mp4
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -30,8 +50,8 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 5b3f6064c9c0f4d03adccc9c9a14c92c
-    m_Address: Assets/_Project/Prefabs/Hotspots/hotspots_living_room.prefab
+  - m_GUID: 576e2a6837fd942ac8388a478c021b98
+    m_Address: Assets/_Project/Art/Static/Tests/Heros_Room_Morning.mp4
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -42,6 +62,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 6e893959842c94d41ad778d955157c63
     m_Address: Assets/_Project/Prefabs/Hotspots/hotspots_backyard.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 755ddb328b0e744b199cd591578fdb92
+    m_Address: Assets/_Project/Art/Static/Tests/Heros_Room_Day.mp4
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -77,6 +102,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: adff35d8329f6487ab64f769a39232e8
     m_Address: Assets/_Project/Prefabs/Hotspots/hotspots_barn.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b5d273d79e5f3479a96abb96bc74a0a0
+    m_Address: Assets/_Project/Art/Static/Tests/Kitchen_Night.mp4
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

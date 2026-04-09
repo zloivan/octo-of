@@ -29,16 +29,19 @@ MonoBehaviour:
       Condition: 0
       ConditionValue: false
       _targetLocationId: test_location_2
+      _label: 
     - Id: hotspot2
       Type: 2
       Condition: 1
       ConditionValue: test_quest_wrong
       _targetLocationId: 
+      _label: 
     - Id: hotspot3
       Type: 2
       Condition: 1
       ConditionValue: test_quest
       _targetLocationId: 
+      _label: 
     TransitionDuration: 3
   Locations:
   - Id: test_location
@@ -57,16 +60,19 @@ MonoBehaviour:
       Condition: 0
       ConditionValue: false
       _targetLocationId: test_location_2
+      _label: Test Location 2
     - Id: hotspot2
       Type: 2
       Condition: 1
       ConditionValue: test_quest_wrong
       _targetLocationId: 
+      _label: 
     - Id: hotspot3
       Type: 2
       Condition: 1
       ConditionValue: test_quest
       _targetLocationId: 
+      _label: 
     TransitionDuration: 3
   - Id: test_location_2
     BackgroundName: Alicias_Room_Day
@@ -84,6 +90,7 @@ MonoBehaviour:
       Condition: 0
       ConditionValue: 
       _targetLocationId: test_location
+      _label: Test Location
     TransitionDuration: 0.3
   - Id: front_porch
     BackgroundName: Heros_Room_Day
@@ -101,33 +108,61 @@ MonoBehaviour:
       Condition: 0
       ConditionValue: 
       _targetLocationId: living_room
+      _label: Living Room
     - Id: porch_to_backyard
       Type: 0
       Condition: 0
       ConditionValue: 
       _targetLocationId: backyard
+      _label: Backyard
     - Id: porch_to_jasons_house
       Type: 0
       Condition: 0
       ConditionValue: 
       _targetLocationId: jasons_house
+      _label: Jasons House
     - Id: porch_to_garage
       Type: 0
       Condition: 0
       ConditionValue: 
       _targetLocationId: garage
+      _label: Garage
     TransitionDuration: 0.3
   - Id: living_room
     BackgroundName: Heros_Room_Morning
     HotspotPrefabRef:
-      m_AssetGUID: 5b3f6064c9c0f4d03adccc9c9a14c92c
+      m_AssetGUID: 122114605bde24f3c9f1becd14eaae29
       m_SubObjectName: 
       m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
       m_SubObjectGUID: 
       m_EditorAssetChanged: 0
     HasBackButton: 1
-    Hotspots: []
+    Hotspots:
+    - Id: living_room_secret_1
+      Type: 2
+      Condition: 0
+      ConditionValue: 
+      _targetLocationId: 
+      _label: 
+    - Id: living_room_secret_2
+      Type: 2
+      Condition: 0
+      ConditionValue: 
+      _targetLocationId: 
+      _label: 
+    - Id: living_room_secret_3
+      Type: 2
+      Condition: 0
+      ConditionValue: 
+      _targetLocationId: 
+      _label: 
+    - Id: living_room_secret_4
+      Type: 2
+      Condition: 0
+      ConditionValue: 
+      _targetLocationId: 
+      _label: 
     TransitionDuration: 0.3
   - Id: backyard
     BackgroundName: Jays_Room
@@ -145,11 +180,19 @@ MonoBehaviour:
       Condition: 0
       ConditionValue: 
       _targetLocationId: barn
+      _label: Barn
     - Id: backyard_to_field
       Type: 0
       Condition: 0
       ConditionValue: 
       _targetLocationId: tractor_field
+      _label: Tractor Field
+    - Id: backyard_to_front_porch
+      Type: 0
+      Condition: 0
+      ConditionValue: 
+      _targetLocationId: front_porch
+      _label: Front Porch
     TransitionDuration: 0.3
   - Id: barn
     BackgroundName: Kitchen_Day
@@ -167,11 +210,19 @@ MonoBehaviour:
       Condition: 0
       ConditionValue: 
       _targetLocationId: paddock
+      _label: Paddock
     - Id: barn_to_field
       Type: 0
       Condition: 0
       ConditionValue: 
       _targetLocationId: tractor_field
+      _label: Tractor Field
+    - Id: barn_to_backyard
+      Type: 0
+      Condition: 0
+      ConditionValue: 
+      _targetLocationId: backyard
+      _label: Backyard
     TransitionDuration: 0.3
   - Id: paddock
     BackgroundName: Kitchen_Night
@@ -213,11 +264,13 @@ MonoBehaviour:
       Condition: 0
       ConditionValue: 
       _targetLocationId: backyard
+      _label: Backyard
     - Id: field_to_barn
       Type: 0
       Condition: 0
       ConditionValue: 
       _targetLocationId: barn
+      _label: Barn
     TransitionDuration: 0.3
   - Id: garage
     BackgroundName: Alicias_Room_Day
@@ -231,5 +284,5 @@ MonoBehaviour:
     HasBackButton: 1
     Hotspots: []
     TransitionDuration: 0.3
-  MouseTexture: {fileID: 2800000, guid: a7abd4fe88084440ab78255c406976f3, type: 3}
+  MouseTexture: {fileID: 2800000, guid: 0eacfb4190f574a1f9d07fdef2951a38, type: 3}
   MouseTextureHotspot: {x: 0, y: 0}

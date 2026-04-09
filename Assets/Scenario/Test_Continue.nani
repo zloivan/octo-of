@@ -12,4 +12,17 @@ Narrator: "Этого не должно быть видно сразу."
 Narrator: "Нарратив продолжился c тега по клику на хотспот."
 @exitNarrative
 
+#secret_2
+@back Heros_Room_Morning id:location
+Narrator: "Нашили 2ой секрет"
+@exitNarrative
+#secret_3
+@back Heros_Room_Morning id:location
+Narrator: "Нашили 3ий секрет"
+@exitNarrative
+#secret_4
+@back Heros_Room_Morning id:location
+Narrator: "Нашили 4ый секрет"
+@exitNarrative
+
 @stop

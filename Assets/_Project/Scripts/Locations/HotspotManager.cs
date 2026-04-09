@@ -40,10 +40,8 @@ namespace OnlyFarms.Locations
 
             _container = Object.Instantiate(prefab);
             Object.DontDestroyOnLoad(_container);
-            SetAlpha(0f);
-
             _hotspotViews = _container.GetComponentsInChildren<HotSpotView>();
-
+            SetAlpha(0f);
             foreach (var view in _hotspotViews)
             {
                 var spot = activeHotspots.FirstOrDefault(h => h.Id == view.GetId());
@@ -54,6 +52,7 @@ namespace OnlyFarms.Locations
                 {
                     _mouseInput.Register(view);
                     view.SetShimmer(spot.Type == HotspotType.Item);
+                    view.Setup(new HotspotViewModel(spot));
                 }
             }
 
@@ -120,12 +119,9 @@ namespace OnlyFarms.Locations
 
             //TODO: Это явно стоит отдать или самой View или кому то более специализированному,
             //  этот класс не должен отвечать за детали отображения
-            var renderers = _container.GetComponentsInChildren<Renderer>();
-            foreach (var renderer in renderers)
+            foreach (var view in _hotspotViews)
             {
-                var color = renderer.material.color;
-                color.a = alpha;
-                renderer.material.color = color;
+                view.SetAlpha(alpha);
             }
         }
     }

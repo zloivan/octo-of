@@ -1,7 +1,9 @@
 using System;
 using System.Threading;
 using Naninovel;
+using OnlyFarms.Locations.Domain;
 using OnlyFarms.Utilities;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -25,17 +27,36 @@ namespace OnlyFarms.Locations.UI
         [SerializeField] private Collider2D _collider;
         [SerializeField] private Material _outlineMaterial;
         [SerializeField] private Material _shimmerMaterial;
+        [SerializeField] private TextMeshPro _textMeshPro;
 
+        private HotspotViewModel _viewModel;
         private float _originalSweepFrequency = -1f;
         private MaterialPropertyBlock _mpb;
         private CancellationTokenSource _cts;
 
+        public void Setup(HotspotViewModel viewModel)
+        {
+            _viewModel = viewModel;
+            if (_viewModel.HasLable())
+            {
+                _textMeshPro.text = viewModel.GetHotspotLabel();
+            }
+
+            _textMeshPro.gameObject.SetActive(false);
+        }
 
         private void OnDestroy()
         {
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;
+        }
+
+        public void SetAlpha(float alpha)
+        {
+            var color = _spriteRenderer.material.color;
+            color.a = alpha;
+            _spriteRenderer.material.color = color;
         }
 
         public void SetBrightness(float brightness)
@@ -75,6 +96,11 @@ namespace OnlyFarms.Locations.UI
         public void OnPointerEnter(PointerEventData eventData)
         {
             SetBrightness(5f);
+            if (_viewModel.HasLable())
+            {
+                _textMeshPro?.gameObject.SetActive(true);
+            }
+
             SetDash(true);
             OnHovered?.Invoke();
             OFLogger.Log("Pointer Enter");
@@ -83,6 +109,11 @@ namespace OnlyFarms.Locations.UI
         public void OnPointerExit(PointerEventData eventData)
         {
             SetBrightness(.5f);
+            if (_viewModel.HasLable())
+            {
+                _textMeshPro?.gameObject.SetActive(false);
+            }
+
             SetDash(false);
             OnHoverExited?.Invoke();
             OFLogger.Log("Pointer Exit");
@@ -97,7 +128,6 @@ namespace OnlyFarms.Locations.UI
         public void SetShimmer(bool isEnabled)
         {
             _spriteRenderer.material = isEnabled ? _shimmerMaterial : _outlineMaterial;
-
             if (isEnabled)
             {
                 _cts = new CancellationTokenSource();

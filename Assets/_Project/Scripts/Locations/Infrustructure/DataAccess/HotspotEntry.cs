@@ -12,9 +12,10 @@ namespace OnlyFarms.Locations
         [SerializeField] private ActivationCondition Condition;
         [SerializeField] private string ConditionValue; //TODO: String identifier not good
         [SerializeField] private string _targetLocationId;
-        
+        [SerializeField] private string _label;
+
 
         public HotspotData GetHotspotData(string locationID) =>
-            new(Id, Type, Condition, ConditionValue, _targetLocationId, locationID);
+            new(Id, Type, Condition, ConditionValue, _targetLocationId, locationID, _label);
     }
 }

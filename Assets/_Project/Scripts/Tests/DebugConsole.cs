@@ -103,7 +103,14 @@ namespace OnlyFarms.Tests
             Engine.GetService<GameFlowService>()?.SetItemNarrativeSource(
                 new HardcodedItemNarrativeSource(hotspotId, scriptName, labelName));
         }
-        
+
+        [ConsoleCommand("secretLivingRoom")]
+        public static void SetOnClickHotspotScript()
+        {
+            Engine.GetService<GameFlowService>()?.SetItemNarrativeSource(
+                new HardcodedItemNarrativeSourceLivingRoom());
+        }
+
         [ConsoleCommand("setReturnPoint")]
         public static void SetReturnPoint(string scriptName, string label = null) =>
             Engine.GetService<GameFlowService>()?.SetSessionSource(

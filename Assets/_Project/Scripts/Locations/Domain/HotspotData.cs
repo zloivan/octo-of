@@ -8,9 +8,10 @@ namespace OnlyFarms.Locations.Domain
         public readonly string ConditionValue;
         public readonly string TargetLocationId;
         public readonly string LocationId;
+        public readonly string Label;
 
         public HotspotData(string id, HotspotType type, ActivationCondition condition, string conditionValue,
-            string targetLocationId, string locationId)
+            string targetLocationId, string locationId, string label)
         {
             Id = id;
             Type = type;
@@ -18,6 +19,7 @@ namespace OnlyFarms.Locations.Domain
             ConditionValue = conditionValue;
             TargetLocationId = targetLocationId;
             LocationId = locationId;
+            Label = label;
         }
 
         public override string ToString() =>
