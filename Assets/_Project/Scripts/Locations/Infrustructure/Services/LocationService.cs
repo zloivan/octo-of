@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using Naninovel;
 using Naninovel.Commands;
@@ -23,7 +24,7 @@ namespace OnlyFarms.Locations
         public event Action<LocationData> OnLocationEnterCompleted;
         public event Action<LocationData> OnLocationEnterStarted;
         public event Action<string> OnItemPickedUp;
-        
+
         public event Action OnNavigatedForward;
         public event Action OnNavigatedBack;
         public event Action OnFreeRoamEnded;
@@ -38,7 +39,7 @@ namespace OnlyFarms.Locations
         private GraphicRaycaster _continueInputRaycaster;
         private bool _isInFreeRoam;
         private readonly IScriptPlayer _scriptPlayer;
-        private CancellationTokenSource _cts = new ();
+        private CancellationTokenSource _cts = new();
 
         public LocationService(GameConfig gameConfig, IBackgroundManager backgroundManager, IScriptPlayer scriptPlayer)
         {
@@ -108,20 +109,20 @@ namespace OnlyFarms.Locations
 
             var linked = CancellationTokenSource.CreateLinkedTokenSource(ct.CancellationToken, _cts.Token);
             var renderToken = new AsyncToken(linked.Token);
-            
-            
+
+
             OnLocationEnterStarted?.Invoke(_locationLogic.GetCurrentLocation());
 
             if (renderToken.Canceled)
                 return;
-            
+
             var definition = _config.GetLocationDefinition(locationId);
             var availableHotspots = _hotspotLogic.GetAvailableHotspots(locationId);
             var bg = await _backgroundManager.GetOrAddActor(LOCATION_ACTOR);
-            
+
             _hotspotCursorController.ResetCursor();
             _hotspotManager.Unload();
-            
+
             //BUG: Если первая локация для отображение, сразу показывается, при этом остальное показывается через твин,
             // выглядит как зависание во время загрузки локации
             bg.ChangeVisibility(true, new Tween(0), token: ct).Forget();
@@ -139,7 +140,7 @@ namespace OnlyFarms.Locations
             OnLocationEnterCompleted?.Invoke(_locationLogic.GetCurrentLocation());
             OFLogger.Log($"LocationService entered {_locationLogic.GetCurrentLocation().Id}");
         }
-        
+
         public async UniTask GoBack(AsyncToken ct)
         {
             if (!_locationLogic.CanGoBack())
@@ -249,13 +250,13 @@ namespace OnlyFarms.Locations
                 SetContinueInputEnabled(false);
             }
         }
-        
+
         private void SetContinueInputEnabled(bool enabled)
         {
             if (_continueInputRaycaster != null)
                 _continueInputRaycaster.enabled = enabled;
         }
-        
+
         public string PrintLocationHistory()
         {
             var history = _locationLogic.GetSnapshot().LocationHistory;
@@ -269,7 +270,7 @@ namespace OnlyFarms.Locations
         {
             _isInFreeRoam = value;
             SetContinueInputEnabled(!value);
-            
+
             if (!value)
             {
                 _cts?.Cancel();
@@ -277,9 +278,18 @@ namespace OnlyFarms.Locations
                 _hotspotManager.Unload();
                 var bg = await _backgroundManager.GetOrAddActor(LOCATION_ACTOR);
                 bg.ChangeVisibility(false, new Tween(0.3f), token: token).Forget();
-                
+
                 OnFreeRoamEnded?.Invoke();
             }
         }
+
+        public string[] GetAllLocationIds() =>
+            _config.GetAllLocations().Select(l => l.Id).ToArray();
+
+        public string[] GetConsumedHotspotIds() =>
+            _hotspotLogic.GetConsumedHotspotIds();
+
+        public void SetHotspotsVisible(bool value) =>
+            _hotspotManager.SetVisible(value);
     }
 }

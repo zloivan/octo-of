@@ -63,19 +63,17 @@ namespace OnlyFarms.Locations
         public void DeactivateHotspot(string id)
         {
             if (_container == null)
-            {
                 return;
-            }
 
             _hotspotViews.FirstOrDefault(v => v.GetId() == id)?.gameObject.SetActive(false);
         }
 
         public void SetVisible(bool visible)
         {
-            if (_container != null)
-            {
-                _container.SetActive(visible);
-            }
+            if (_container == null) 
+                return;
+            
+            _container.SetActive(visible);
         }
 
         public void Unload()
