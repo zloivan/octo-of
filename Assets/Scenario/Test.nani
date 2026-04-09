@@ -1,8 +1,6 @@
 
 Narrator: "До фри рума."
-;@back id:MainBackground appearance:test
-;@back id:VideoBackground appearance:test
-;@wait 2
+
 @exitNarrative test_location returnScript:Test returnLabel:after_roam
 Narrator: "Этого не должно быть видно сразу."
 
@@ -15,9 +13,3 @@ Narrator: "Он все продолжается...."
 # after_roam_2
 Narrator: "А потом мы выходим"
 @stop
-;@enterLocation locationId:test_location
-;@enterLocation locationId:test_location
-;@back id:VideoBackground appearance:test
-;@stop
-;19.2 10.8 остальные вот такие bounds
-;25.6 14.4 - вот такой на 2560 yf 1080
