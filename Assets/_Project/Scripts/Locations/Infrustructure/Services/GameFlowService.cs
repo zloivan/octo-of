@@ -1,5 +1,6 @@
 using JetBrains.Annotations;
 using Naninovel;
+using OnlyFarms.Core;
 using OnlyFarms.Locations.Domain;
 using OnlyFarms.Utilities;
 
@@ -15,9 +16,10 @@ namespace OnlyFarms.Locations.Services
 
         private ILocationNarrativeSource _narrativeSource;
         private IFreeRoamSessionSource _sessionSource;
+        private IItemNarrativeSource _itemNarrativeSource;
 
         public GameFlowService(LocationService locationService, IScriptPlayer scriptPlayer,
-            QuestService questStatusSource)
+            QuestService questStatusSource, GameConfig gameConfig)
         {
             _locationService = locationService;
             _scriptPlayer = scriptPlayer;
@@ -28,15 +30,28 @@ namespace OnlyFarms.Locations.Services
         {
             //TODO: Временно жестко заданный источник, потом нужно будет сделать возможность его настройки
             _narrativeSource = new AlwaysNullNarrativeSource();
+            _itemNarrativeSource = new AlwaysNullItemNarrativeSource();
 
             _locationService.OnLocationEnterStarted += LocationService_OnLocationEnterStarted;
             _questStatusSource.OnAllQuestsCompleted += QuestStatusSource_OnAllQuestsCompleted;
+            _locationService.OnItemPickedUp += LocationService_OnItemPickedUp;
             OFLogger.Log("GameFlowService initialized");
             return UniTask.CompletedTask;
         }
 
+        private void LocationService_OnItemPickedUp(string hotspotId)
+        {
+            var script = _itemNarrativeSource.GetOnUseScript(hotspotId);
+
+            if (string.IsNullOrEmpty(script))
+                return;
+
+            LaunchNarrativeAsync(script, _itemNarrativeSource.GetOnUseLabel(hotspotId)).Forget();
+        }
+
         public void ResetService()
         {
+            //TODO: Почему скидываем только этот сорс?
             _sessionSource = null;
             OFLogger.Log("GameFlowService reset");
         }
@@ -45,6 +60,7 @@ namespace OnlyFarms.Locations.Services
         {
             _locationService.OnLocationEnterStarted -= LocationService_OnLocationEnterStarted;
             _questStatusSource.OnAllQuestsCompleted -= QuestStatusSource_OnAllQuestsCompleted;
+            _locationService.OnItemPickedUp -= LocationService_OnItemPickedUp;
             OFLogger.Log("GameFlowService destroyed");
         }
 
@@ -57,6 +73,13 @@ namespace OnlyFarms.Locations.Services
         {
             _narrativeSource = narrativeSource;
             OFLogger.Log("LocationNarrativeSource changed...");
+        }
+
+        //TODO: Временно жестко заданный источник, потом нужно будет сделать возможность его настройки
+        public void SetItemNarrativeSource(IItemNarrativeSource itemNarrativeSource)
+        {
+            _itemNarrativeSource = itemNarrativeSource;
+            OFLogger.Log("ItemNarrativeSource changed...");
         }
 
         private void LocationService_OnLocationEnterStarted(LocationData locationData)

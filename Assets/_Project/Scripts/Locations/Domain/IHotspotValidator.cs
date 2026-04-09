@@ -16,24 +16,19 @@ namespace OnlyFarms.Locations.Domain
     {
         private readonly QuestService _questService;
 
-        public HotspotValidator(QuestService questService)
-        {
+        public HotspotValidator(QuestService questService) =>
             _questService = questService;
-        }
-        
+
         public bool IsAvailable(HotspotData hotspotData)
         {
             switch (hotspotData.Condition)
             {
                 case ActivationCondition.Always:
                      return true;
-                    break;
                 case ActivationCondition.RequiresQuestId:
                     return _questService?.IsQuestCompleted(hotspotData.ConditionValue) ?? true;
-                    break;
                 case ActivationCondition.RequiresFlag:
                         return false; // TODO: custom flag system
-                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }

@@ -89,13 +89,19 @@ namespace OnlyFarms.Tests
 
             OFLogger.Log(locationService.PrintLocationHistory());
         }
-        
+
         [ConsoleCommand("setOnEnter")]
         public static void SetOnEnterScript(string locationId, string script)
         {
-            OFLogger.Log("TEST");
             Engine.GetService<GameFlowService>()?.SetLocationNarrativeSource(
                 new HardcodedNarrativeSource(locationId, script));
+        }
+
+        [ConsoleCommand("setOnClick")]
+        public static void SetOnClickHotspotScript(string hotspotId, string scriptName, string labelName = null)
+        {
+            Engine.GetService<GameFlowService>()?.SetItemNarrativeSource(
+                new HardcodedItemNarrativeSource(hotspotId, scriptName, labelName));
         }
     }
 }

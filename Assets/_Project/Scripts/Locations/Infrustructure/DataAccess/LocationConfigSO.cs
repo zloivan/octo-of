@@ -29,5 +29,9 @@ namespace OnlyFarms.Locations
 
         public HotspotData[] GetAllHotspots() =>
             Locations.SelectMany(l => l.Hotspots.Select(h => h.GetHotspotData(locationID: l.Id))).ToArray();
+
+        public HotspotData GetHotspot(string hotspotId) =>
+            GetAllHotspots().FirstOrDefault(h => h.Id == hotspotId);
+
     }
 }

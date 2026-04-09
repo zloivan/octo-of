@@ -22,6 +22,7 @@ namespace OnlyFarms.Locations
         private const string LOCATION_ACTOR = "location";
         public event Action<LocationData> OnLocationEnterCompleted;
         public event Action<LocationData> OnLocationEnterStarted;
+        public event Action<string> OnItemPickedUp;
         
         public event Action OnNavigatedForward;
         public event Action OnNavigatedBack;
@@ -121,6 +122,8 @@ namespace OnlyFarms.Locations
             _hotspotCursorController.ResetCursor();
             _hotspotManager.Unload();
             
+            //BUG: Если первая локация для отображение, сразу показывается, при этом остальное показывается через твин,
+            // выглядит как зависание во время загрузки локации
             bg.ChangeVisibility(true, new Tween(0), token: ct).Forget();
 
             await UniTask.WhenAll(
@@ -167,6 +170,7 @@ namespace OnlyFarms.Locations
                     if (_hotspotLogic.TryConsume(hotspotId))
                     {
                         _hotspotManager.DeactivateHotspot(hotspotId);
+                        OnItemPickedUp?.Invoke(hotspotId);
                         OFLogger.Log($"LocationService consumed item {hotspotId}");
                         break;
                     }

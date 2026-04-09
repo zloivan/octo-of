@@ -21,6 +21,7 @@ namespace OnlyFarms.Core
         {
             _locationService.OnNavigatedForward += LocationService_OnNavigatedForward;
             _locationService.OnNavigatedBack += LocationService_OnNavigatedBack;
+            _locationService.OnItemPickedUp += LocationService_OnItemPickedUp;
             return UniTask.CompletedTask;
         }
 
@@ -28,11 +29,15 @@ namespace OnlyFarms.Core
         {
             _locationService.OnNavigatedForward -= LocationService_OnNavigatedForward;
             _locationService.OnNavigatedBack -= LocationService_OnNavigatedBack;
+            _locationService.OnItemPickedUp -= LocationService_OnItemPickedUp;
         }
 
         public void ResetService()
         {
         }
+
+        private void LocationService_OnItemPickedUp(string hotspotId) =>
+            PlaySfx(_config.ItemPickupAudioId);
 
         private void LocationService_OnNavigatedForward() =>
             PlaySfx(_config.TransitionForwardAudioId);
