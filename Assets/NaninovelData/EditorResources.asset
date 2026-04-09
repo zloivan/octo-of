@@ -176,6 +176,24 @@ MonoBehaviour:
     - name: Alicias_Room_Day
       pathPrefix: Backgrounds/location
       guid: 2c98f0ee0078c4218bec120a09897fd6
+    - name: Heros_Room_Day
+      pathPrefix: Backgrounds/location
+      guid: 755ddb328b0e744b199cd591578fdb92
+    - name: Jays_Room
+      pathPrefix: Backgrounds/location
+      guid: 1673f1ed37b69422f860c7e9486b55d4
+    - name: Heros_Room_Morning
+      pathPrefix: Backgrounds/location
+      guid: 576e2a6837fd942ac8388a478c021b98
+    - name: Kitchen_Day
+      pathPrefix: Backgrounds/location
+      guid: 36f323484f9084715a5cde6dfa8dfea8
+    - name: Ricks_Room_Day
+      pathPrefix: Backgrounds/location
+      guid: 165a7049e99e8469aa4ebfe551f5656f
+    - name: Kitchen_Night
+      pathPrefix: Backgrounds/location
+      guid: b5d273d79e5f3479a96abb96bc74a0a0
   - Id: Audio
     Resources:
     - name: click_object

@@ -30,8 +30,28 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5b3f6064c9c0f4d03adccc9c9a14c92c
+    m_Address: Assets/_Project/Prefabs/Hotspots/hotspots_living_room.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 61d7207672fc141eea7937adbcb52053
     m_Address: Assets/_Project/Art/Static/Tests/Hotspot.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6e893959842c94d41ad778d955157c63
+    m_Address: Assets/_Project/Prefabs/Hotspots/hotspots_backyard.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8a41a503de5e74837a556c044e395d50
+    m_Address: Assets/_Project/Prefabs/Hotspots/hotspots_paddock.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8c70afb5bdff142ef826af597665d64a
+    m_Address: Assets/_Project/Prefabs/Hotspots/hotspots_front_porch.prefab
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -45,8 +65,23 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a4512cc9f88684502bc9baa61759a468
+    m_Address: Assets/_Project/Prefabs/Hotspots/hotspots_tractor_field.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a7abd4fe88084440ab78255c406976f3
     m_Address: Assets/_Project/Art/Static/Tests/Green-sprite.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: adff35d8329f6487ab64f769a39232e8
+    m_Address: Assets/_Project/Prefabs/Hotspots/hotspots_barn.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b995f8a32821d4218bc039f136702825
+    m_Address: Assets/_Project/Configs/LocationsConfig.asset
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -55,8 +90,18 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c3573b71b295347079158c201f6f7b9d
+    m_Address: Assets/_Project/Prefabs/Hotspots/hotspots_garage.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: cb61671860b9349088e45382ef8d6421
     m_Address: Assets/_Project/Art/Static/Tests/Day1_static6_1.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e9d98e80e081444e4829265d03df31f1
+    m_Address: Assets/_Project/Prefabs/Hotspots/hotspots_jasons_house.prefab
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

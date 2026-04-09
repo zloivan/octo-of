@@ -1,7 +1,7 @@
 
 Narrator: "До фри рума."
 
-@exitNarrative test_location returnScript:Test returnLabel:after_roam
+@exitNarrative front_porch returnScript:Test returnLabel:after_roam
 Narrator: "Этого не должно быть видно сразу."
 
 # after_roam

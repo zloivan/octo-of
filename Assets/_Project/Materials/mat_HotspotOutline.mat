@@ -44,12 +44,12 @@ Material:
     - _Brightness: 1
     - _DashDensity: 4
     - _DashEnabled: 1
-    - _DashSharpness: 0
+    - _DashSharpness: 0.397
     - _DashSpeed: 4.09
     - _EnableExternalAlpha: 0
-    - _GradientFalloff: 0.802
+    - _GradientFalloff: 0.783
     - _InnerWidth: 0
-    - _OutlineWidth: 21.68
+    - _OutlineWidth: 9.96
     - _PulseEnabled: 1
     - _PulseMin: 0.8
     - _PulseSpeed: 4

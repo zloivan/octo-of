@@ -14,13 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   StartingLocation:
     Id: test_location
-    BackgroundRef:
-      m_AssetGUID: 9fd9ea5e5128b4977b52e1ab66fd1dd6
-      m_SubObjectName: 
-      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
-        Culture=neutral, PublicKeyToken=null
-      m_SubObjectGUID: 
-      m_EditorAssetChanged: 0
     BackgroundName: Alex_Room
     HotspotPrefabRef:
       m_AssetGUID: 4bbc0cfe5bb9341ee9954d4fe76e7e22
@@ -29,7 +22,6 @@ MonoBehaviour:
         Culture=neutral, PublicKeyToken=null
       m_SubObjectGUID: 
       m_EditorAssetChanged: 0
-    OnEnterScript: 
     HasBackButton: 0
     Hotspots:
     - Id: hotspot1
@@ -50,13 +42,6 @@ MonoBehaviour:
     TransitionDuration: 3
   Locations:
   - Id: test_location
-    BackgroundRef:
-      m_AssetGUID: 9fd9ea5e5128b4977b52e1ab66fd1dd6
-      m_SubObjectName: 
-      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
-        Culture=neutral, PublicKeyToken=null
-      m_SubObjectGUID: 
-      m_EditorAssetChanged: 0
     BackgroundName: Alex_Room
     HotspotPrefabRef:
       m_AssetGUID: 4bbc0cfe5bb9341ee9954d4fe76e7e22
@@ -65,7 +50,6 @@ MonoBehaviour:
         Culture=neutral, PublicKeyToken=null
       m_SubObjectGUID: 
       m_EditorAssetChanged: 0
-    OnEnterScript: 
     HasBackButton: 0
     Hotspots:
     - Id: hotspot1
@@ -85,13 +69,6 @@ MonoBehaviour:
       _targetLocationId: 
     TransitionDuration: 3
   - Id: test_location_2
-    BackgroundRef:
-      m_AssetGUID: cb61671860b9349088e45382ef8d6421
-      m_SubObjectName: Day1_static6_1_0
-      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
-        Culture=neutral, PublicKeyToken=null
-      m_SubObjectGUID: 
-      m_EditorAssetChanged: 1
     BackgroundName: Alicias_Room_Day
     HotspotPrefabRef:
       m_AssetGUID: 4bbc0cfe5bb9341ee9954d4fe76e7e22
@@ -100,7 +77,6 @@ MonoBehaviour:
         Culture=neutral, PublicKeyToken=null
       m_SubObjectGUID: 
       m_EditorAssetChanged: 0
-    OnEnterScript: Test_Continue
     HasBackButton: 1
     Hotspots:
     - Id: hotspot4
@@ -108,6 +84,152 @@ MonoBehaviour:
       Condition: 0
       ConditionValue: 
       _targetLocationId: test_location
+    TransitionDuration: 0.3
+  - Id: front_porch
+    BackgroundName: Heros_Room_Day
+    HotspotPrefabRef:
+      m_AssetGUID: 8c70afb5bdff142ef826af597665d64a
+      m_SubObjectName: 
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    HasBackButton: 0
+    Hotspots:
+    - Id: porch_to_living_room
+      Type: 0
+      Condition: 0
+      ConditionValue: 
+      _targetLocationId: living_room
+    - Id: porch_to_backyard
+      Type: 0
+      Condition: 0
+      ConditionValue: 
+      _targetLocationId: backyard
+    - Id: porch_to_jasons_house
+      Type: 0
+      Condition: 0
+      ConditionValue: 
+      _targetLocationId: jasons_house
+    - Id: porch_to_garage
+      Type: 0
+      Condition: 0
+      ConditionValue: 
+      _targetLocationId: garage
+    TransitionDuration: 0.3
+  - Id: living_room
+    BackgroundName: Heros_Room_Morning
+    HotspotPrefabRef:
+      m_AssetGUID: 5b3f6064c9c0f4d03adccc9c9a14c92c
+      m_SubObjectName: 
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    HasBackButton: 1
+    Hotspots: []
+    TransitionDuration: 0.3
+  - Id: backyard
+    BackgroundName: Jays_Room
+    HotspotPrefabRef:
+      m_AssetGUID: 6e893959842c94d41ad778d955157c63
+      m_SubObjectName: 
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    HasBackButton: 0
+    Hotspots:
+    - Id: backyard_to_barn
+      Type: 0
+      Condition: 0
+      ConditionValue: 
+      _targetLocationId: barn
+    - Id: backyard_to_field
+      Type: 0
+      Condition: 0
+      ConditionValue: 
+      _targetLocationId: tractor_field
+    TransitionDuration: 0.3
+  - Id: barn
+    BackgroundName: Kitchen_Day
+    HotspotPrefabRef:
+      m_AssetGUID: adff35d8329f6487ab64f769a39232e8
+      m_SubObjectName: 
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    HasBackButton: 0
+    Hotspots:
+    - Id: barn_to_paddock
+      Type: 0
+      Condition: 0
+      ConditionValue: 
+      _targetLocationId: paddock
+    - Id: barn_to_field
+      Type: 0
+      Condition: 0
+      ConditionValue: 
+      _targetLocationId: tractor_field
+    TransitionDuration: 0.3
+  - Id: paddock
+    BackgroundName: Kitchen_Night
+    HotspotPrefabRef:
+      m_AssetGUID: 8a41a503de5e74837a556c044e395d50
+      m_SubObjectName: 
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    HasBackButton: 1
+    Hotspots: []
+    TransitionDuration: 0.3
+  - Id: jasons_house
+    BackgroundName: Ricks_Room_Day
+    HotspotPrefabRef:
+      m_AssetGUID: e9d98e80e081444e4829265d03df31f1
+      m_SubObjectName: 
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    HasBackButton: 1
+    Hotspots: []
+    TransitionDuration: 0.3
+  - Id: tractor_field
+    BackgroundName: Alex_Room
+    HotspotPrefabRef:
+      m_AssetGUID: a4512cc9f88684502bc9baa61759a468
+      m_SubObjectName: 
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    HasBackButton: 0
+    Hotspots:
+    - Id: field_to_backyard
+      Type: 0
+      Condition: 0
+      ConditionValue: 
+      _targetLocationId: backyard
+    - Id: field_to_barn
+      Type: 0
+      Condition: 0
+      ConditionValue: 
+      _targetLocationId: barn
+    TransitionDuration: 0.3
+  - Id: garage
+    BackgroundName: Alicias_Room_Day
+    HotspotPrefabRef:
+      m_AssetGUID: c3573b71b295347079158c201f6f7b9d
+      m_SubObjectName: 
+      m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    HasBackButton: 1
+    Hotspots: []
     TransitionDuration: 0.3
   MouseTexture: {fileID: 2800000, guid: a7abd4fe88084440ab78255c406976f3, type: 3}
   MouseTextureHotspot: {x: 0, y: 0}
