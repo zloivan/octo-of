@@ -6,30 +6,69 @@
 
 ---
 
-## 5. Архитектура сервисов (Naninovel DI)
+## 1. Принципы разработки
 
-### Принцип
+### Снаружи внутрь (Outside-In)
 
-Сервисы регистрируются через Naninovel DI (`[InitializeAtRuntime]`). Допустимы целенаправленные обёртки над Naninovel-сервисами когда они решают конкретную проблему и не дублируют существующую функциональность.
+Разработка начинается с публичного контракта и видимого поведения, затем движется к реализации:
 
-> **Пример допустимой обёртки:** `LocationService` использует `IBackgroundManager` для управления фоном локаций через выделенный actor (`id: "location"`). Нарративный `@back` работает с другими акторами и никогда не трогает `"location"`.
+1. Определить интерфейс / событие / команду
+2. Написать заглушку-реализацию
+3. Реализовать детали
+
+Заглушки — это не временный костыль, это осознанный выбор: система работает end-to-end с первого дня.
+
+### Абстракции там, где реализация неизвестна или может меняться
+
+Если не знаем как будет реализовано — вводим интерфейс. Примеры из проекта:
 
 ```
-LocationLogic (plain C#)              ← доменная логика, runtime-состояние
-        ↑
-LocationService : IStatefulService    ← Naninovel lifecycle, тонкий фасад
-        ↑
-ExitNarrativeCommand : Command        ← @exitNarrative id:backyard в .nani
+ILocationNarrativeSource  — кто решает, запускать ли скрипт при входе на локацию
+IFreeRoamSessionSource    — кто знает, куда вернуться по завершении фри рума
+IQuestStatusSource        — кто сообщает о завершении всех квестов
+IHotspotValidator         — кто проверяет доступность хотспота
 ```
 
-### Регистрация сервисов
+Заглушки реализуют интерфейс с минимальным поведением. В нужный эпик заглушка заменяется реальной реализацией — остальной код не меняется.
+
+### Один класс — одна ответственность
+
+Признак нарушения: метод нужно изменить по двум разным причинам. Решение — выделить класс или интерфейс.
+
+### Сервисы vs Команды
+
+- **Сервис** — реализует `IEngineService` или `IStatefulService<T>`, регистрируется через `[InitializeAtRuntime]`
+- **Команда** — наследует `Command`, вызывается из `.nani` скриптов
+
+Команды — тонкий слой. Вся логика — в сервисах и plain C# классах.
+
+---
+
+## 2. Слои архитектуры
+
+```
+.nani скрипты
+      ↓
+Команды (Command)           ← тонкий слой, только маршрутизация
+      ↓
+Сервисы (IEngineService)    ← оркестрация, lifecycle, события
+      ↓
+Plain C# логика             ← доменная логика, без зависимости на Unity/Naninovel
+      ↓
+ScriptableObject конфиги    ← данные, только чтение
+```
+
+Plain C# классы (`LocationLogic`, `HotspotLogic`) не знают о Unity и Naninovel. Их можно тестировать без движка.
+
+---
+
+## 3. Архитектура сервисов (Naninovel DI)
 
 ```csharp
 [InitializeAtRuntime]
-public class LocationService : IStatefulService<LocationServiceState>
+public class LocationService : IStatefulService<GameStateMap>
 {
-    public LocationService(GameConfig gameConfig, IBackgroundManager backgroundManager,
-                           ICameraManager cameraManager) { ... }
+    public LocationService(GameConfig gameConfig, IBackgroundManager backgroundManager, IScriptPlayer scriptPlayer) { }
 }
 ```
 
@@ -42,8 +81,9 @@ public class LocationService : IStatefulService<LocationServiceState>
 public class GameConfig : Configuration
 {
     public LocationConfigSO LocationConfig;
-    // QuestConfigSO QuestConfig;     — добавляется в Эпике 2
-    // ScaleConfigSO ScaleConfig;     — добавляется в Эпике 3
+    public GameSoundConfig SoundConfig;
+    // QuestConfigSO QuestConfig;   — добавляется в Эпике 2
+    // ScaleConfigSO ScaleConfig;   — добавляется в Эпике 3
 }
 ```
 
@@ -53,54 +93,97 @@ public class GameConfig : Configuration
 Engine.GetService<LocationService>().Enter("backyard", ct);
 ```
 
-### Почему нарративный скрипт — арбитр флоу
-
-`@exitNarrative` — блокирующая команда. Скрипт дня (`day_01.nani`) содержит полный флоу: нарратив → свободное перемещение → нарратив. Нет отдельного координатора — дизайнер видит весь день в одном файле.
-
-```
-; day_01.nani
-; ... нарратив ...
-@activateDayQuests day:day1
-@exitNarrative id:backyard      ← блокирует до выполнения всех квестов дня
-; ... нарратив продолжается ...
-```
-
 ---
 
-## 8. Слой представления (View / UI)
+## 4. Игровой флоу — два состояния
 
-### Принцип
+Игра всегда находится в одном из двух состояний:
 
-Views — passive objects. Они не знают о логике, не кэшируют состояние. Они только:
-- Экспонируют callbacks и Actions
-- Обновляют визуальное состояние через метод (`SetScore(int score)`)
-- Генерируют события через Action<> поля
+- **Нарратив** — активен `IScriptPlayer`, управляет фоном, текстом, персонажами
+- **Free Roam** — `IScriptPlayer` остановлен, активны хотспоты и фон локации
 
-### Пример: HotspotView
+Переход **нарратив → free roam**: команда `@exitNarrative`
+Переход **free roam → нарратив**: `GameFlowService` через `IQuestStatusSource.OnAllQuestsCompleted` или `ILocationNarrativeSource`
+
+Половинчатого состояния нет. При переходе в нарратив — `HideAllActors` + `SetFreeRoamMode(false)` скрывают всё от free roam. При переходе в free roam — `scriptPlayer.Stop()` освобождает MainTrack.
+
+### GameFlowService — оркестратор переходов
+
+```
+IQuestStatusSource.OnAllQuestsCompleted  →  GameFlowService  →  LaunchNarrativeAsync()
+LocationService.OnLocationEnterStarted   →  GameFlowService  →  ILocationNarrativeSource → LaunchNarrativeAsync()
+```
 
 ```csharp
-public class HotspotView : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
+[InitializeAtRuntime]
+public class GameFlowService : IEngineService
 {
-    public string Id;
-    public Action OnHoverEnter;
-    public Action OnHoverExit;
-    public Action OnClicked;
+    // Зависимости через конструктор:
+    // LocationService, IScriptPlayer, QuestService (как IQuestStatusSource), ILocationNarrativeSource
 
-    public void SetBrightness(float value) { /* MaterialPropertyBlock */ }
-    public void SetInteractable(bool value) { /* collider.enabled */ }
+    public void SetSessionSource(IFreeRoamSessionSource source); // временно до Epic 2
 }
 ```
 
-### Контроллер (Presenter)
+**Интерфейсы GameFlowService:**
 
-1. Держит ссылку на View
-2. Подписывается на события View
-3. Вызывает сервисы в ответ
-4. Обновляет View по событиям сервиса
+| Интерфейс | Назначение | Заглушка | Epic |
+|---|---|---|---|
+| `ILocationNarrativeSource` | скрипт при входе на локацию | `AlwaysNullNarrativeSource` | 2 |
+| `IFreeRoamSessionSource` | точка возврата в нарратив | `HardcodedSessionSource` | 2 |
+| `IQuestStatusSource` | триггер завершения квестов | реализует `QuestService` | stub |
 
 ---
 
-## 9. Persistence (Save/Load)
+## 5. Флоу дня
+
+```
+day_01.nani:
+  @activateDayQuests day:day1
+  @exitNarrative backyard returnScript:day_01 returnLabel:after_free_roam
+    → HideAllActors
+    → LocationService.Enter("backyard") — фон + хотспоты
+    → SetFreeRoamMode(true)
+    → GameFlowService.SetSessionSource(new HardcodedSessionSource("day_01", "after_free_roam"))
+    → scriptPlayer.Stop() — MainTrack свободен
+
+  ; --- игрок в свободном перемещении ---
+  ; QuestService.ForceComplete() / реальное завершение квестов
+    → IQuestStatusSource.OnAllQuestsCompleted
+    → GameFlowService.LaunchNarrativeAsync("day_01", "after_free_roam")
+    → SetFreeRoamMode(false) — хотспоты и фон скрываются
+    → scriptPlayer.LoadAndPlayAtLabel("day_01", "after_free_roam")
+
+  # after_free_roam
+  ; нарратив продолжается
+```
+
+### Нарративная вставка при входе на локацию
+
+```
+Игрок переходит на локацию
+  → LocationService.RenderLocation()
+  → OnLocationEnterStarted?.Invoke()           ← до рендера фона
+  → GameFlowService → ILocationNarrativeSource.GetOnEnterScript(locationId)
+  → если не null: SetFreeRoamMode(false) + scriptPlayer.Stop() + LoadAndPlay(script)
+  → рендер локации отменяется через CancellationToken
+  → по @exitNarrative в скрипте — возврат в free roam
+```
+
+---
+
+## 6. Слой представления (View / UI)
+
+Views — passive objects:
+- Экспонируют callbacks и Actions
+- Обновляют визуальное состояние через метод
+- Не хранят бизнес-состояние
+
+Контроллер/Presenter подписывается на события View и вызывает сервисы в ответ.
+
+---
+
+## 7. Persistence (Save/Load)
 
 ```csharp
 public interface IStatefulService<TState> : IEngineService
@@ -110,95 +193,45 @@ public interface IStatefulService<TState> : IEngineService
 }
 ```
 
-### Save/Load при @exitNarrative
+`LoadServiceState` — только восстановление данных. Рендеринг — через повторное выполнение после загрузки.
 
-- `IsInFreeRoam = true` сохраняется в `LocationServiceState`
-- При загрузке: Naninovel восстанавливает строку скрипта → выполняет `@exitNarrative` повторно → `LocationService.Enter()` восстанавливает фон + хотспоты
-
-### Что НЕ сохраняется
-
-- Transient UI state
-- Выбранный элемент (пересчитывается при загрузке)
-- Кэш ассетов (Addressables управляет)
-
-> **Исключение:** `MiniGameService` — рекорды персистентны между сбросами.
+При загрузке в free roam: `IsInFreeRoam=true` → `scriptPlayer.Stop()` → `RenderLocation()`.
 
 ---
 
-## 10. Аудио
+## 8. Аудио
 
-```csharp
-Engine.GetService<IAudioManager>().PlaySfxAsync("click_movement_forward");
+Игровые сервисы не вызывают `IAudioManager` напрямую. Они файрят доменные события. `SoundManager` — единственная точка связи событий со звуком.
+
+```
+LocationService.OnNavigatedForward  ──┐
+LocationService.OnNavigatedBack     ──┤  SoundManager  →  IAudioManager
+LocationService.OnItemPickedUp      ──┘
 ```
 
-SFX-ключи — в модульных файлах каждой системы.
+Исключение: `@sfx` в `.nani` скриптах — допустимо.
 
 ---
 
-## 11. Асинхронность (UniTask)
+## 9. Асинхронность
 
-- Команды — `async/await` в `ExecuteAsync()`
-- Загрузка ассетов — `Addressables.LoadAssetAsync`
-- View-методы — синхронные
+| Слой | Тип | Причина |
+|---|---|---|
+| Домен (plain C#) | Синхронный | Только данные, никакого IO |
+| Unity-инфраструктура | `AsyncToken` (Naninovel) | Единый async-стек |
+| Addressables | `handle.Task.AsUniTask()` | BCL Task → UniTask |
+| Async события | `event Func<UniTask>` | Избегаем `async void` |
 
-```csharp
-public override async UniTask ExecuteAsync(AsyncToken asyncToken = default)
-{
-    await Engine.GetService<LocationService>()
-        .Enter(Id, asyncToken.CancellationToken);
-    // ждём выполнения всех квестов дня
-    await Engine.GetService<QuestService>()
-        .WaitForAllQuestsCompleted(asyncToken.CancellationToken);
-}
-```
+Cysharp UniTask удалён. Только Naninovel UniTask / AsyncToken.
 
 ---
 
-## 12. Что НЕ делаем
+## 10. Что НЕ делаем
 
-- Параллельные event bus'ы — только Naninovel Events
-- Синглтоны поверх DI
-- Прямые ссылки между сервисами — только `Engine.GetService<>()`
-- Кэш состояния в View
 - `GameObject.Find()` / `FindObjectOfType()` в runtime
-
----
-
-## 15. Сценарии использования
-
-### Сценарий 1: Флоу дня (нарратив → свободное перемещение → нарратив)
-
-```
-day_01.nani:
-  @activateDayQuests day:day1      ← QuestService инициализирует квесты
-  @exitNarrative id:backyard       ← LocationService.Enter("backyard")
-                                      IsInFreeRoam = true
-                                      ждём QuestService.WaitForAllQuestsCompleted()
-  ; --- игрок в свободном перемещении ---
-  ; QuestService.OnAllQuestsCompleted срабатывает
-  ; @exitNarrative разблокируется
-  @back appearance:day1_evening    ← нарратив продолжается
-  ; ...
-```
-
-### Сценарий 2: Клик по предмету в свободном перемещении
-
-```
-Игрок кликает по предмету
-  → HotspotView.OnClicked → IHotspotInput → LocationService.OnItemClicked()
-  → _logic.MarkConsumed(itemId)
-  → HotspotManager.DeactivateHotspot(itemId)
-  → PlaySfx("click_object")
-  → если onClickScript задан: ScriptPlayer.PlayAsync() (нарратив внутри свободного перемещения)
-  → QuestService.ReportEvent(objectiveTag) — null-safe
-```
-
-### Сценарий 3: Save/Load в свободном перемещении
-
-```
-Игрок сохраняет → LocationServiceState: CurrentLocationId="backyard", IsInFreeRoam=true
-Игрок загружает → Naninovel восстанавливает строку @exitNarrative
-               → LocationService.Enter("backyard") — фон + хотспоты
-               → QuestService восстанавливает прогресс квестов
-               → WaitForAllQuestsCompleted() продолжает ждать
-```
+- Синглтоны поверх DI
+- Бизнес-логика в `.nani` скриптах — только повествование
+- Нарративные скрипты не знают о квестах и точках возврата
+- `async void` — только `async UniTask` или `event Func<UniTask>`
+- `IAudioManager` напрямую из игровых сервисов — только через `SoundManager`
+- `IEngineService` для plain C# вспомогательных классов — только для сервисов с lifecycle

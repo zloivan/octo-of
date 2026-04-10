@@ -1,186 +1,200 @@
 # Архитектура — Система квестов
 
-> Покрывает: QuestLogic, QuestService, UI, конфиг, команды, ReportEvent, возврат в нарратив, SFX.
-> Внешние зависимости: `LocationService` (ReportEvent), `StartMiniGameCommand` (ReportEvent)
+> Покрывает: QuestService, GameFlowService, IQuestStatusSource, ILocationNarrativeSource, IFreeRoamSessionSource, возврат в нарратив.
 > Индекс: [`architecture_index.md`](architecture_index.md) | Ядро: [`architecture_core.md`](architecture_core.md)
 
 ---
 
-## 13. Система квестов
+## 1. Контекст
 
-### 13.1 Контекст
+Квесты выдаются в сегментах free roam. При завершении всех квестов дня — `GameFlowService` возобновляет нарратив. Точка возврата хранится в `IFreeRoamSessionSource` — не в нарративном скрипте.
 
-Квесты выдаются в сегментах свободного перемещения. Каждый квест состоит из объективов. Выполнение объектива — через `ReportEvent`. При выполнении всех квестов дня — `QuestService` сигнализирует `OnAllQuestsCompleted`, что разблокирует `@exitNarrative` и возвращает управление нарративному скрипту.
-
-### 13.2 Конфиг
-
-```
-QuestConfig : ScriptableObject
-  └── QuestDefinition[]
-        ├── id: string
-        ├── localizationKey: string
-        ├── isOrdered: bool
-        ├── day: string
-        └── objectives: ObjectiveDefinition[]
-              ├── id: string
-              ├── objectiveTag: string
-              ├── targetCount: int
-              └── rewardDelta: AttSusDelta  ← опционально
-```
-
-### 13.3 QuestLogic (plain C#)
-
-```csharp
-public class QuestLogic
-{
-    public void Initialize(QuestDefinition def) { }
-    public bool ReportEvent(string objectiveTag) { } // true если объектив завершён
-    public bool IsCompleted => Array.TrueForAll(_progress, p => p.IsCompleted);
-    public ObjectiveProgress[] GetProgress() => _progress;
-
-    public event Action<string> OnObjectiveCompleted; // objectiveId
-    public event Action OnQuestCompleted;
-}
-```
-
-### 13.4 QuestService
-
-```
-QuestLogic (plain C#)
-        ↑
-QuestService : IEngineService, IStatefulService<State>, IQuestEventReporter
-        ↑
-Naninovel Commands (§13.6)
-```
-
-**IQuestEventReporter:**
-```csharp
-public interface IQuestEventReporter
-{
-    void ReportEvent(string objectiveTag);
-}
-```
-
-**События:**
-```csharp
-// UI-слой подписывается для отображения квестов
-public event Action<QuestLogic> OnQuestAdded;
-
-// ExitNarrativeCommand awaits этот UniTask
-public UniTask WaitForAllQuestsCompleted(CancellationToken ct);
-```
-
-`WaitForAllQuestsCompleted` — возвращает уже завершённый `UniTask` если активных квестов нет, иначе ждёт последнего `OnQuestCompleted`.
-
-**Последовательная выдача (`isOrdered`):**
-Если `isOrdered=true` — активируется по одному. При `OnQuestCompleted` — dequeue следующий → `OnQuestAdded`. Если `false` — все сразу при `@activateDayQuests`.
-
-**State:**
-```csharp
-[System.Serializable]
-public class State
-{
-    public ActiveQuestSnapshot[] ActiveQuests;
-    public string[] CompletedQuestIds;
-    public string[] PendingOrderedQuestIds;
-}
-```
-
-### 13.5 UI — QuestPanelUI и QuestEntryView
-
-`QuestPanelUI : CustomUI` — в Naninovel Custom UI Layer.
-- Подписана на `QuestService.OnQuestAdded(QuestLogic logic)`
-- Инстанциирует `QuestEntryView`, вызывает `entryView.Bind(logic)`
-
-`QuestEntryView : MonoBehaviour`:
-- `Bind(QuestLogic logic)` — подписывается на `logic.OnObjectiveCompleted` → анимирует прогресс; на `logic.OnQuestCompleted` → fade out + `quest_crossed` + `Destroy`
-- Не хранит ссылку на сервис
-
-```
-QuestService (владеет QuestLogic[])
-    → OnQuestAdded(logic) →
-QuestPanelUI (инстанциирует QuestEntryView)
-    → entryView.Bind(logic) →
-QuestEntryView (подписывается на logic.On*)
-```
-
-### 13.6 Команды
-
-| Команда | Параметры | Действие |
-|---|---|---|
-| `@activateDayQuests` | `day:day1` | Инициализирует квесты дня. `isOrdered` → только первый; иначе все сразу |
-| `@exitNarrative` | `id:backyard` (опц.) | Входит в свободное перемещение, ждёт `WaitForAllQuestsCompleted` |
-| `@addQuest` | `id:find_diary` | Добавляет одиночный квест динамически |
-
-**ExitNarrativeCommand** — блокирующая команда, центральный механизм перехода между нарративом и свободным перемещением:
-
-```csharp
-[CommandAlias("exitNarrative")]
-public class ExitNarrativeCommand : Command
-{
-    public StringParameter Id; // опциональный locationId
-
-    public override async UniTask ExecuteAsync(AsyncToken asyncToken = default)
-    {
-        var locationService = Engine.GetService<LocationService>();
-        var questService = Engine.GetService<QuestService>();
-
-        // Войти на локацию (или остаться на текущей)
-        var locationId = Id.HasValue ? Id.Value : locationService.CurrentLocationId;
-        await locationService.Enter(locationId, asyncToken.CancellationToken);
-
-        // Ждём выполнения всех квестов дня — здесь блокируется скрипт
-        await questService.WaitForAllQuestsCompleted(asyncToken.CancellationToken);
-
-        // Возврат в нарратив — скрипт продолжается
-    }
-}
-```
-
-### В .nani скриптах
-
-```
-; Стандартный флоу дня
-@activateDayQuests day:day1
-@exitNarrative id:backyard          ← блокирует до выполнения всех квестов
-
-; Динамически добавить квест по ходу повествования
-@addQuest id:bonus_quest
-
-; Войти в свободное перемещение и вернуть на последнюю локацию
-@exitNarrative
-```
-
-### 13.7 Интеграция ReportEvent
-
-**Из LocationService** (клик по предмету):
-```csharp
-Engine.GetService<IQuestEventReporter>()?.ReportEvent(itemConfig.objectiveTag);
-```
-
-**Из StartMiniGameCommand** (завершение мини-игры):
-```csharp
-// ReportEvent — ВСЕГДА, независимо от победы
-Engine.GetService<IQuestEventReporter>()?.ReportEvent($"play_minigame_{id}");
-```
-
-### 13.8 Возврат в нарратив
-
-Механизм — `QuestService.WaitForAllQuestsCompleted()`, который awaits `ExitNarrativeCommand`. При завершении последнего квеста:
-
-1. `QuestLogic.OnQuestCompleted` → `QuestService.CheckAllCompleted()`
-2. Все активные квесты завершены → `QuestService` резолвит `UniTask`
-3. `@exitNarrative` разблокируется → скрипт дня продолжается
-4. Воспроизводится `quest_completed`
-
-Нет отдельного `returnScript`, нет `@goto`. Нарративный скрипт просто продолжает следующую строку.
+Нарративный скрипт не знает о квестах и точках возврата. Он только рассказывает историю и вызывает `@exitNarrative`.
 
 ---
 
-## 10. Аудио (фрагмент — квесты)
+## 2. QuestService (stub — полная реализация в Эпике 2)
 
-| Ключ | Момент | Приоритет |
+```csharp
+[InitializeAtRuntime]
+public class QuestService : IStatefulService<GameStateMap>, IQuestStatusSource
+{
+    public event Func<UniTask> OnAllQuestsCompleted;
+
+    public bool IsQuestCompleted(string conditionValue) { /* stub */ }
+    public void ForceComplete() => OnAllQuestsCompleted?.Invoke().Forget(); // только для debug
+}
+```
+
+`QuestService` реализует `IQuestStatusSource` — единственный контракт который `GameFlowService` использует для подписки.
+
+В Epic 2: добавить `QuestLogic`, `ReportEvent`, `ActiveQuestSnapshot[]`, `SaveServiceState`.
+
+---
+
+## 3. GameFlowService
+
+Оркестратор переходов между нарративом и free roam. Подписывается на события, не предоставляет публичное API для вызова флоу.
+
+```csharp
+[InitializeAtRuntime]
+public class GameFlowService : IEngineService
+{
+    public GameFlowService(
+        LocationService locationService,
+        IScriptPlayer scriptPlayer,
+        QuestService questSource,            // как IQuestStatusSource
+        ILocationNarrativeSource narrativeSource)
+
+    public void SetSessionSource(IFreeRoamSessionSource source); // временно до Epic 2
+    public void SetNarrativeSource(ILocationNarrativeSource source); // только для debug/тестов
+}
+```
+
+### Подписки
+
+```
+QuestService.OnAllQuestsCompleted      → OnAllQuestsCompleted()   → LaunchNarrativeAsync(returnScript, returnLabel)
+LocationService.OnLocationEnterStarted → OnLocationEnterStarted() → ILocationNarrativeSource → LaunchNarrativeAsync()
+```
+
+### LaunchNarrativeAsync
+
+```csharp
+private async UniTask LaunchNarrativeAsync(string scriptName, string label = null)
+{
+    await _locationService.SetFreeRoamMode(false); // отменяет рендер, чистит сцену
+    _scriptPlayer.Stop();
+
+    if (!string.IsNullOrEmpty(label))
+        await _scriptPlayer.LoadAndPlayAtLabel(scriptName, label);
+    else
+        await _scriptPlayer.LoadAndPlay(scriptName);
+}
+```
+
+---
+
+## 4. Интерфейсы
+
+### IQuestStatusSource
+
+```csharp
+public interface IQuestStatusSource
+{
+    event Func<UniTask> OnAllQuestsCompleted;
+}
+```
+
+Реализует `QuestService`. В Epic 2 остаётся без изменений.
+
+### ILocationNarrativeSource
+
+```csharp
+public interface ILocationNarrativeSource
+{
+    string GetOnEnterScript(string locationId);
+    string GetOnEnterLabel(string locationId); // null = с начала
+}
+```
+
+Заглушка: `AlwaysNullNarrativeSource` — всегда null.
+Debug: `HardcodedNarrativeSource(locationId, script, label)` — для тестирования конкретной локации.
+Epic 2: `QuestDrivenNarrativeSource` — проверяет условия (день, флаг, `IScriptPlayer.HasPlayed()`).
+
+### IFreeRoamSessionSource
+
+```csharp
+public interface IFreeRoamSessionSource
+{
+    string ReturnScript { get; }
+    string ReturnLabel  { get; }
+}
+```
+
+Заглушка: `HardcodedSessionSource(returnScript, returnLabel)` — устанавливается из `@exitNarrative`.
+Epic 2: `DaySessionSource` — читает из `DayConfig`, `@exitNarrative` перестаёт принимать `returnScript`.
+
+---
+
+## 5. DayConfig — план для Epic 2
+
+```
+DayConfig : ScriptableObject
+  ├── day: string
+  ├── returnScript: string      ← точка возврата в нарратив по завершении квестов
+  ├── returnLabel: string
+  └── quests: QuestDefinition[]
+```
+
+`DaySessionSource` реализует `IFreeRoamSessionSource`, читая `returnScript/returnLabel` из `DayConfig` текущего дня. `@exitNarrative` перестаёт принимать `returnScript` — нарративный скрипт не знает о точках возврата.
+
+---
+
+## 6. Команды
+
+| Команда | Параметры | Действие |
 |---|---|---|
-| `quest_ticked` | Выполнение одного действия составного квеста | Med |
-| `quest_crossed` | Выполнение квеста | High |
-| `quest_completed` | Выполнение последнего квеста дня | High |
+| `@exitNarrative` | `[locationId]`, `[returnScript]`, `[returnLabel]` | Выйти в free roam. `returnScript` — временный до Epic 2 |
+| `@activateDayQuests` | `day:day1` | Epic 2 — активировать квесты дня |
+| `@addQuest` | `id:find_diary` | Epic 2 — добавить квест динамически |
+
+**`@exitNarrative` — текущее поведение:**
+
+```csharp
+await new HideAllActors().Execute(token);
+await locationService.Enter(locationId, token);
+await locationService.SetFreeRoamMode(true);
+if (Assigned(ReturnScript))
+    gameFlowService.SetSessionSource(new HardcodedSessionSource(ReturnScript.Value, returnLabel));
+scriptPlayer.Stop();
+```
+
+**`@exitNarrative` — поведение в Epic 2:**
+`returnScript` и `returnLabel` удаляются. `GameFlowService` получает `IFreeRoamSessionSource` от `DayConfig`.
+
+---
+
+## 7. Возврат в нарратив — полный флоу
+
+```
+Игрок выполняет последний квест
+  → QuestService.ForceComplete() / реальная проверка в Epic 2
+  → IQuestStatusSource.OnAllQuestsCompleted
+  → GameFlowService.OnAllQuestsCompleted()
+  → IFreeRoamSessionSource.ReturnScript / ReturnLabel
+  → LaunchNarrativeAsync(returnScript, returnLabel)
+      → LocationService.SetFreeRoamMode(false)
+          → _renderCts.Cancel()
+          → HotspotManager.Unload()
+          → bg.ChangeVisibility(false)
+      → scriptPlayer.Stop()
+      → scriptPlayer.LoadAndPlayAtLabel(returnScript, returnLabel)
+```
+
+---
+
+## 8. Save/Load
+
+`IsInFreeRoam` сохраняется в `LocationServiceState`. При загрузке с `IsInFreeRoam=true`:
+- `scriptPlayer.Stop()`
+- `RenderLocation()` восстанавливает сцену
+
+`IFreeRoamSessionSource` (returnScript/returnLabel) — в Epic 2 будет в `GameFlowServiceState`. Сейчас при загрузке returnPoint теряется (приемлемо для demo).
+
+---
+
+## 9. UI — QuestPanelUI (Epic 2)
+
+`QuestPanelUI : CustomUI` — подписана на `QuestService.OnQuestAdded(QuestLogic logic)`.
+`QuestEntryView : MonoBehaviour` — `Bind(QuestLogic logic)`, не хранит ссылку на сервис.
+
+---
+
+## 10. Аудио (Epic 2)
+
+| Ключ | Момент |
+|---|---|
+| `quest_ticked` | Выполнение одного объектива |
+| `quest_crossed` | Выполнение квеста |
+| `quest_completed` | Выполнение последнего квеста дня |
