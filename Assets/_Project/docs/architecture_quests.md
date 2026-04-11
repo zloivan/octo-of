@@ -117,6 +117,23 @@ public class QuestInstance
 ### QuestSession
 
 ```csharp
+// Результат одного вызова ReportEvent — явный именованный тип вместо tuple.
+// Struct: живёт на стеке, zero-allocation, immutable.
+public readonly struct QuestEventResult
+{
+    public static readonly QuestEventResult None = default;
+
+    public readonly QuestInstance          Quest;
+    public readonly QuestObjectiveInstance Objective;
+    public bool IsEmpty => Quest == null;
+
+    public QuestEventResult(QuestInstance quest, QuestObjectiveInstance objective)
+    {
+        Quest     = quest;
+        Objective = objective;
+    }
+}
+
 public class QuestSession
 {
     private readonly List<QuestInstance> _quests;
@@ -125,8 +142,8 @@ public class QuestSession
     public IReadOnlyList<QuestInstance> VisibleQuests { get; } // только видимые
     public bool AllCompleted => _quests.All(q => q.IsCompleted);
 
-    // Возвращает (quest, objective) если прогресс был засчитан, иначе (null, null)
-    public (QuestInstance Quest, QuestObjectiveInstance Objective) ReportEvent(string eventId) { ... }
+    // Возвращает populated result если прогресс был засчитан, иначе QuestEventResult.None
+    public QuestEventResult ReportEvent(string eventId) { ... }
 
     // Вызывается после завершения квеста — раскрывает следующий если IsSequential
     private void AdvanceVisibility() { ... }
@@ -301,11 +318,10 @@ public class QuestProgressObserver : IEngineService
         return UniTask.CompletedTask;
     }
 
-    public UniTask UninitializeService()
+    public void DestroyService()
     {
         _locationService.OnLocationEnterStarted -= OnLocationEntered;
         _locationService.OnItemPickedUp         -= OnItemPickedUp;
-        return UniTask.CompletedTask;
     }
 
     private void OnLocationEntered(string locationId) => _reporter.ReportEvent(locationId);
@@ -331,12 +347,11 @@ public class QuestSoundObserver : IEngineService
         return UniTask.CompletedTask;
     }
 
-    public UniTask UninitializeService()
+    public void DestroyService()
     {
         _questService.OnObjectiveTicked    -= OnObjectiveTicked;
         _questService.OnQuestCompleted     -= OnQuestCompleted;
         _questService.OnAllQuestsCompleted -= OnAllQuestsCompleted;
-        return UniTask.CompletedTask;
     }
 
     private void OnObjectiveTicked(QuestInstance q, QuestObjectiveInstance o)
