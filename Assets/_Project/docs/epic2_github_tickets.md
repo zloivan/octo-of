@@ -776,6 +776,14 @@ public class HotspotValidator
 
 ---
 
+#### Решение по квестовым предметам
+
+`RequiresQuestId` проверяет что квест **выполнен**. Для квестовых предметов (point-and-click) нужна обратная логика — видны пока квест активен. `IsQuestActive` в `IQuestStatusSource` **не добавляем**.
+
+Квестовые предметы используют `condition = Always`. Они появляются на локации потому что находятся в конфиге текущего дня — квест к этому моменту уже выдан. Исчезают через `HotspotLogic.TryConsume` при клике, не через валидатор.
+
+`RequiresQuestId` остаётся только для хотспотов открывающихся **после** завершения квеста (мини-игры, переходы по сюжету).
+
 #### Acceptance Criteria
 - [ ] `HotspotEntry.questCondition` принимает `QuestDefinitionSO` asset в Inspector.
 - [ ] `HotspotValidator.IsHotspotVisible` использует SO-ссылку для `RequiresQuestId`.

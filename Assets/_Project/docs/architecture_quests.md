@@ -616,6 +616,20 @@ case ActivationCondition.RequiresQuestCompleted:
 
 `HotspotData` получает поле `QuestDefinitionSO QuestCondition` вместо `string ConditionValue`.
 
+### Квестовые предметы (point-and-click)
+
+ГДД: *"квестовые предметы спаунятся на локации только когда игрок получает квест"*.
+
+**Решение: `ActivationCondition.Always` + `HotspotLogic.TryConsume`.**
+
+Квестовые предметы не используют `RequiresQuestId` — они не блокируются по состоянию квеста. Вместо этого:
+- Предмет конфигурируется в `DayConfigSO` / `LocationConfigSO` как обычный `HotspotType.Item` с `condition = Always`.
+- Виден всё время пока активен free roam сегмент (квест уже выдан к этому моменту по определению).
+- При клике: `HotspotLogic.TryConsume(id)` → `LocationService.OnItemPickedUp` → `QuestProgressObserver.ReportEvent(itemId)`.
+- Consume делает предмет невидимым навсегда — повторное взаимодействие невозможно.
+
+`RequiresQuestId` остаётся для хотспотов которые открываются **после** выполнения квеста (мини-игры, переходы, открывающиеся по сюжету). `IsQuestActive` в `IQuestStatusSource` не нужен.
+
 ---
 
 ## 10. Возврат в нарратив — полный флоу
