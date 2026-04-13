@@ -1,15 +1,13 @@
 #if UNITY_EDITOR
 using System.Threading;
 using Naninovel;
-using OnlyFarms.Core;
-using OnlyFarms.Locations;
-using OnlyFarms.Locations.Domain;
-using OnlyFarms.Locations.Services;
+using OnlyFarms.Infrastructure.DataAccess;
+using OnlyFarms.Infrastructure.Services;
 using UnityEditor;
 using UnityEngine;
-using LocationService = OnlyFarms.Locations.LocationService;
+using LocationService = OnlyFarms.Infrastructure.Services.LocationService;
 
-namespace OnlyFarms.Debug.Editor
+namespace OnlyFarms._Project.Scripts.Tests.Editor
 {
     public class LocationDebugPanel : EditorWindow
     {

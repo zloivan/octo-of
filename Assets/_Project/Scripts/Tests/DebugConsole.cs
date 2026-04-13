@@ -1,9 +1,8 @@
 using System.Threading;
 using Naninovel;
-using OnlyFarms.Locations;
-using OnlyFarms.Locations.Commands;
-using OnlyFarms.Locations.Domain;
-using OnlyFarms.Locations.Services;
+using OnlyFarms.Infrastructure.Commands;
+using OnlyFarms.Infrastructure.DataAccess;
+using OnlyFarms.Infrastructure.Services;
 using OnlyFarms.Utilities;
 
 namespace OnlyFarms.Tests

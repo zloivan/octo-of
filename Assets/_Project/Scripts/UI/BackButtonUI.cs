@@ -1,12 +1,13 @@
 using System;
 using Naninovel;
 using Naninovel.UI;
-using OnlyFarms.Locations.Domain;
+using OnlyFarms.Domain.Locations;
 using OnlyFarms.Utilities;
 using UnityEngine;
 using UnityEngine.UI;
+using LocationService = OnlyFarms.Infrastructure.Services.LocationService;
 
-namespace OnlyFarms.Locations.UI
+namespace OnlyFarms.UI
 {
     public class BackButtonUI : CustomUI
     {

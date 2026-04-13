@@ -1,13 +1,12 @@
 using System;
 using System.Threading;
 using Naninovel;
-using OnlyFarms.Locations.Domain;
 using OnlyFarms.Utilities;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace OnlyFarms.Locations.UI
+namespace OnlyFarms.UI
 {
     public class HotSpotView : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {

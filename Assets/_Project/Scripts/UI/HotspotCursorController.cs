@@ -1,8 +1,8 @@
 using System;
-using OnlyFarms.Locations.Input;
+using OnlyFarms.Input;
 using UnityEngine;
 
-namespace OnlyFarms.Locations.UI
+namespace OnlyFarms.UI
 {
     public class HotspotCursorController : IDisposable
     {

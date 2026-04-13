@@ -1,5 +1,6 @@
 using Naninovel;
-using OnlyFarms.Locations;
+using OnlyFarms.Infrastructure.DataAccess;
+using OnlyFarms.Infrastructure.Services;
 
 namespace OnlyFarms.Core
 {

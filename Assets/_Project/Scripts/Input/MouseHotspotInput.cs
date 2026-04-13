@@ -1,8 +1,8 @@
 using System;
-using OnlyFarms.Locations.UI;
+using OnlyFarms.UI;
 using UnityEngine;
 
-namespace OnlyFarms.Locations.Input
+namespace OnlyFarms.Input
 {
     public class MouseHotspotInput : MonoBehaviour, IHotspotInput
     {
