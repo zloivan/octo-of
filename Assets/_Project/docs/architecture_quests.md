@@ -601,20 +601,37 @@ public class QuestEntryView : MonoBehaviour
 
 ---
 
-## 9. HotspotValidator — обновление
+## 9. HotspotValidator — архитектура и слой
 
-Больше не использует строковый `ConditionValue`. Принимает `QuestDefinitionSO`:
+`HotspotValidator` живёт в **Infrastructure**, не в Domain. Domain содержит только `IHotspotValidator` как контракт.
+
+**Причина:** валидатор зависит на `IQuestStatusSource` (Infrastructure) — Domain не может знать об инфраструктурных зависимостях.
+
+**Граница DataAccess → Domain:** `HotspotEntry` хранит `QuestDefinitionSO _questCondition` в Inspector (type-safe drag-drop, без строк). При конвертации в `HotspotData` SO конвертируется в `string` через `_questCondition.name`. `HotspotData` (Domain) хранит только `string ConditionValue` — никаких Unity-типов.
+
+**`IQuestStatusSource.IsQuestCompleted`** принимает `string questId` — runtime-проверка по ID. SO используется только в Editor/Inspector.
 
 ```csharp
-// HotspotEntry в инспекторе:
-public QuestDefinitionSO QuestCondition; // перетаскиваем SO — никаких строк
+// Infrastructure/HotspotValidator.cs
+public class HotspotValidator : IHotspotValidator
+{
+    private readonly IQuestStatusSource _questSource;
 
-// HotspotValidator:
-case ActivationCondition.RequiresQuestCompleted:
-    return _questService.IsQuestCompleted(hotspotData.QuestCondition);
+    public HotspotValidator(IQuestStatusSource questSource) =>
+        _questSource = questSource;
+
+    public bool IsAvailable(HotspotData hotspotData)
+    {
+        return hotspotData.Condition switch
+        {
+            ActivationCondition.Always          => true,
+            ActivationCondition.RequiresQuestId => _questSource?.IsQuestCompleted(hotspotData.ConditionValue) ?? true,
+            ActivationCondition.RequiresFlag    => false, // TODO: flag system
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
+}
 ```
-
-`HotspotData` получает поле `QuestDefinitionSO QuestCondition` вместо `string ConditionValue`.
 
 ### Квестовые предметы (point-and-click)
 
@@ -714,8 +731,8 @@ GameFlowService (слушатель)
   ← IQuestStatusSource.OnAllQuestsCompleted
   → LaunchNarrativeAsync()
 
-HotspotValidator
-  → QuestService.IsQuestCompleted(QuestDefinitionSO)
+HotspotValidator (Infrastructure)
+  → IQuestStatusSource.IsQuestCompleted(string questId)
 ```
 
 ---

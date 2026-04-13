@@ -776,18 +776,24 @@ public class HotspotValidator
 
 ---
 
-#### Решение по квестовым предметам
+#### Архитектурные решения
 
-`RequiresQuestId` проверяет что квест **выполнен**. Для квестовых предметов (point-and-click) нужна обратная логика — видны пока квест активен. `IsQuestActive` в `IQuestStatusSource` **не добавляем**.
+**HotspotValidator — слой Infrastructure, не Domain.**
+Domain содержит только `IHotspotValidator` (интерфейс). Реализация `HotspotValidator` живёт в `Infrastructure` — там допустима зависимость на `IQuestStatusSource`.
 
-Квестовые предметы используют `condition = Always`. Они появляются на локации потому что находятся в конфиге текущего дня — квест к этому моменту уже выдан. Исчезают через `HotspotLogic.TryConsume` при клике, не через валидатор.
+**SO → string на границе DataAccess.**
+`HotspotEntry` хранит `QuestDefinitionSO _questCondition` для Inspector (type-safe, без опечаток). `GetHotspotData()` конвертирует через `_questCondition.name` → `HotspotData.ConditionValue: string`. Domain не знает про SO.
 
-`RequiresQuestId` остаётся только для хотспотов открывающихся **после** завершения квеста (мини-игры, переходы по сюжету).
+**`IQuestStatusSource.IsQuestCompleted(string questId)`** — runtime-проверка по строковому ID. SO используется только в Editor.
+
+**Квестовые предметы используют `condition = Always`** — видны весь free roam сегмент, исчезают через `HotspotLogic.TryConsume`. `IsQuestActive` в интерфейс не добавляем.
 
 #### Acceptance Criteria
-- [ ] `HotspotEntry.questCondition` принимает `QuestDefinitionSO` asset в Inspector.
-- [ ] `HotspotValidator.IsHotspotVisible` использует SO-ссылку для `RequiresQuestId`.
-- [ ] Старое поле `conditionValue` не удалено (нужно для `RequiresFlag`).
+- [ ] `HotspotEntry._questCondition` принимает `QuestDefinitionSO` asset в Inspector.
+- [ ] `HotspotEntry.ResolveConditionValue()` конвертирует SO в `_questCondition.name` для `RequiresQuestId`.
+- [ ] `HotspotValidator` находится в `OnlyFarms.Infrastructure`, зависит на `IQuestStatusSource`.
+- [ ] `HotspotData` (Domain) содержит только `string ConditionValue` — никаких Unity-типов.
+- [ ] `conditionValue` (string) остаётся для `RequiresFlag`.
 - [ ] Проект компилируется без ошибок.
 
 ---

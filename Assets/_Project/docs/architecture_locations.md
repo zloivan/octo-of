@@ -98,7 +98,7 @@ HotspotView (GameObject)
 | `ILocationRepository` | interface (domain) | Контракт доступа к данным локаций |
 | `IHotspotRepository` | interface (domain) | Контракт доступа к данным хотспотов |
 | `IHotspotValidator` | interface (domain) | Проверка доступности хотспота |
-| `HotspotValidator` | plain C# | Текущая реализация через `QuestService` |
+| `HotspotValidator` | plain C# (Infrastructure) | Реализация через `IQuestStatusSource` — живёт в Infrastructure, не в Domain |
 | `LocationLogic` | plain C# | Навигация: текущая локация, история |
 | `HotspotLogic` | plain C# | Хотспоты, consumed items, валидация |
 | `LocationHotspotController` | plain C# | `IHotspotInput` → `LocationService` |
