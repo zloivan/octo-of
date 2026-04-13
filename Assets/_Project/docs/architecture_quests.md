@@ -382,11 +382,11 @@ public class DaySessionOrchestrator : IEngineService
     public DaySessionOrchestrator(
         QuestService questService,
         GameFlowService gameFlowService,
-        IQuestRepository questRepository) { }
+        GameConfig gameConfig) { } // GameConfig — единственный способ пробросить конфиги в Naninovel DI
 
     public void StartDay(string dayId)
     {
-        var config = _questRepository.GetDayConfig(dayId);
+        var config = _gameConfig.QuestConfig.GetDayConfig(dayId);
         _questService.ActivateDaySession(config);
         _gameFlowService.SetSessionSource(new DaySessionSource(config));
     }

@@ -35,7 +35,7 @@ namespace OnlyFarms.Infrastructure.Services
             _locationService.OnLocationEnterStarted += LocationService_OnLocationEnterStarted;
             _questStatusSource.OnAllQuestsCompleted += QuestStatusSource_OnAllQuestsCompleted;
             _locationService.OnItemPickedUp += LocationService_OnItemPickedUp;
-            OFLogger.Log("GameFlowService initialized");
+            OFLogger.Log("<color=blue>Initialized</color>");
             return UniTask.CompletedTask;
         }
 
@@ -53,7 +53,7 @@ namespace OnlyFarms.Infrastructure.Services
         {
             //TODO: Почему скидываем только этот сорс?
             _sessionSource = null;
-            OFLogger.Log("GameFlowService reset");
+            OFLogger.Log("<color=yellow>Reset</color>");
         }
 
         public void DestroyService()
@@ -61,7 +61,7 @@ namespace OnlyFarms.Infrastructure.Services
             _locationService.OnLocationEnterStarted -= LocationService_OnLocationEnterStarted;
             _questStatusSource.OnAllQuestsCompleted -= QuestStatusSource_OnAllQuestsCompleted;
             _locationService.OnItemPickedUp -= LocationService_OnItemPickedUp;
-            OFLogger.Log("GameFlowService destroyed");
+            OFLogger.Log("<color=red>Destroyed</color>");
         }
 
         //TODO: Временно публичный

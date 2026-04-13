@@ -71,7 +71,7 @@ namespace OnlyFarms.Infrastructure.Services
             ApplyInputWorkaroundsAsync().Forget();
 
 
-            OFLogger.Log("LocationService initialized");
+            OFLogger.Log("<color=blue>Initialized</color>");
             return UniTask.CompletedTask;
         }
 
@@ -79,14 +79,14 @@ namespace OnlyFarms.Infrastructure.Services
         {
             _locationLogic.Reset();
             _hotspotLogic.Reset();
-            OFLogger.Log("LocationService reset");
+            OFLogger.Log("<color=yellow>Reset</color>");
         }
 
         public void DestroyService()
         {
             _locationHotspotMapper.Dispose();
             _hotspotCursorController.Dispose();
-            OFLogger.Log("LocationService destroyed");
+            OFLogger.Log("<color=red>Destroyed</color>");
         }
 
         public async UniTask Enter(string locationId, AsyncToken ct)

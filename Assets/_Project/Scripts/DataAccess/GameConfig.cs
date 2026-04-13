@@ -7,5 +7,6 @@ namespace OnlyFarms.DataAccess
     {
         public LocationConfigSO LocationConfig;
         public GameSoundConfigSO SoundConfig;
+        public QuestConfigSO QuestConfig;
     }
 }

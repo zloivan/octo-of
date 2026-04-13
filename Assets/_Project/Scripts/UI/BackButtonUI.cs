@@ -16,7 +16,6 @@ namespace OnlyFarms.UI
 
         public override UniTask Initialize()
         {
-            OFLogger.Log("Initializing BackButtonUI...");
             //TODO: Добавить сюда вью модель.
             _locationService = Engine.GetService<LocationService>();
             if (_locationService == null)
@@ -53,7 +52,6 @@ namespace OnlyFarms.UI
 
         private void LocationServiceOnLocationEnterCompleted(LocationData obj)
         {
-            OFLogger.Log("Location render complete, checking back button visibility...");
             if (_locationService.CanGoBack())
                 Show();
             else

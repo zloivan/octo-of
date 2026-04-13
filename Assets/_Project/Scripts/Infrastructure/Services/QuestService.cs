@@ -22,18 +22,18 @@ namespace OnlyFarms.Infrastructure.Services
 
         public UniTask InitializeService()
         {
-            OFLogger.Log("QuestService initialized");
+            OFLogger.Log("<color=blue>Initialized</color>");
             return UniTask.CompletedTask;
         }
 
         public void ResetService()
         {
-            OFLogger.Log("QuestService reset");
+            OFLogger.Log("<color=yellow>QuestService reset</color>");
         }
 
         public void DestroyService()
         {
-            OFLogger.Log("QuestService destroyed");
+            OFLogger.Log("<color=red>QuestService destroyed");
         }
 
         public void SaveServiceState(GameStateMap stateMap)
