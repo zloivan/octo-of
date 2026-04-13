@@ -17,7 +17,8 @@ namespace OnlyFarms.Domain
             _definition = definition;
         }
 
-        public int GetCurrentCount => _currentCount;
+        public int GetCurrentCount() =>
+            _currentCount;
 
         public bool IsCompleted() =>
             _currentCount >= _definition.RequiredCount;

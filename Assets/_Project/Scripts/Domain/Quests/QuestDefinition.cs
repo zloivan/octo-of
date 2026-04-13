@@ -19,7 +19,7 @@ namespace OnlyFarms.Domain
         public QuestObjectiveDefinition[] GetObjectives() =>
             _objectivesArray;
 
-        public bool IsSequntioal() =>
+        public bool IsSequential() =>
             _isSequential;
     }
 }
