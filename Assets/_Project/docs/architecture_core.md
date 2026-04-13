@@ -31,6 +31,23 @@ IHotspotValidator         — кто проверяет доступность �
 
 Заглушки реализуют интерфейс с минимальным поведением. В нужный эпик заглушка заменяется реальной реализацией — остальной код не меняется.
 
+### Code Style — методы вместо свойств
+
+В проекте **не используются C# properties**. Вместо них — явные методы:
+
+```csharp
+// ❌ не используем
+public bool IsCompleted => ...;
+public int CurrentCount { get; private set; }
+
+// ✅ используем
+public bool IsCompleted() => ...;
+public int GetCurrentCount() => ...;
+public void SetCurrentCount(int value) => ...;
+```
+
+Это применяется ко всем слоям: Domain, Infrastructure, DataAccess.
+
 ### Один класс — одна ответственность
 
 Признак нарушения: метод нужно изменить по двум разным причинам. Решение — выделить класс или интерфейс.
