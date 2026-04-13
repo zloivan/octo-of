@@ -1,4 +1,3 @@
-using System;
 using OnlyFarms.Infrastructure.Services;
 
 namespace OnlyFarms.Domain.Hotspots
@@ -11,28 +10,5 @@ namespace OnlyFarms.Domain.Hotspots
     public class AlwaysAvailableHotspotValidator : IHotspotValidator
     {
         public bool IsAvailable(HotspotData hotspotData) => true;
-    }
-
-    public class HotspotValidator : IHotspotValidator
-    {
-        private readonly QuestService _questService;
-
-        public HotspotValidator(QuestService questService) =>
-            _questService = questService;
-
-        public bool IsAvailable(HotspotData hotspotData)
-        {
-            switch (hotspotData.Condition)
-            {
-                case ActivationCondition.Always:
-                     return true;
-                case ActivationCondition.RequiresQuestId:
-                    return _questService?.IsQuestCompleted(hotspotData.ConditionValue) ?? true;
-                case ActivationCondition.RequiresFlag:
-                        return false; // TODO: custom flag system
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
     }
 }

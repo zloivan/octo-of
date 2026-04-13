@@ -10,16 +10,15 @@ namespace OnlyFarms.Infrastructure.Services
     [InitializeAtRuntime]
     public class QuestService : IStatefulService<GameStateMap>, IQuestStatusSource
     {
-        public bool IsQuestsCompleted(QuestDefinitionSO quest) =>
-            throw new NotImplementedException();
-
-        public IReadOnlyList<QuestInstance> GetVisibleQuests() =>
-            throw new NotImplementedException();
-
         public event Action<QuestInstance> OnQuestAdded;
         public event Action<QuestInstance, QuestObjectiveInstance> OnQuestObjectiveTicked;
         public event Action<QuestInstance> OnQuestCompleted;
         public event Func<UniTask> OnAllQuestsCompleted;
+
+        private GameConfig _config;
+
+        public QuestService(GameConfig config) =>
+            _config = config;
 
         public UniTask InitializeService()
         {
@@ -49,16 +48,22 @@ namespace OnlyFarms.Infrastructure.Services
             return UniTask.CompletedTask;
         }
 
-        public bool IsQuestCompleted(string conditionValue)
+        public bool IsQuestCompleted(string questId)
         {
-            //TODO: TEMP TEST
-            OFLogger.Log($"Checking if quest is completed: {conditionValue}");
-            if (conditionValue == "test_quest")
-            {
-                return true;
-            }
-
+            OFLogger.Log("Is Quest Completed Called...");
+            
             return false;
+        }
+
+        public IReadOnlyList<QuestInstance> GetVisibleQuests()
+        {
+            OFLogger.Log("Get visible quests called...");
+            return Array.Empty<QuestInstance>();
+        }
+
+        public void ActivateDaySession(DayConfigSO dayConfig)
+        {
+            OFLogger.Log("Activate Day session called...");
         }
 
         public void ForceComplete() =>

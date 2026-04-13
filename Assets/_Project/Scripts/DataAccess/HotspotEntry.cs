@@ -13,9 +13,20 @@ namespace OnlyFarms.DataAccess
         [SerializeField] private string ConditionValue; //TODO: String identifier not good
         [SerializeField] private string _targetLocationId;
         [SerializeField] private string _label;
+        [SerializeField] private QuestDefinitionSO _questDefinitionSO;
 
 
         public HotspotData GetHotspotData(string locationID) =>
-            new(Id, Type, Condition, ConditionValue, _targetLocationId, locationID, _label);
+            new(Id, Type, Condition, ResolveConditionValue(), _targetLocationId, locationID, _label);
+
+        private string ResolveConditionValue() =>
+            Condition switch
+            {
+                ActivationCondition.RequiresQuestId => _questDefinitionSO != null
+                    ? _questDefinitionSO.name
+                    : string.Empty,
+                ActivationCondition.RequiresFlag => ConditionValue,
+                _ => string.Empty
+            };
     }
 }
