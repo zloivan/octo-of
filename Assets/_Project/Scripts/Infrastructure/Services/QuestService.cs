@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using Naninovel;
-using OnlyFarms.Infrastructure.DataAccess;
+using OnlyFarms.DataAccess;
+using OnlyFarms.Domain;
 using OnlyFarms.Utilities;
 
 namespace OnlyFarms.Infrastructure.Services
@@ -8,6 +10,15 @@ namespace OnlyFarms.Infrastructure.Services
     [InitializeAtRuntime]
     public class QuestService : IStatefulService<GameStateMap>, IQuestStatusSource
     {
+        public bool IsQuestsCompleted(QuestDefinitionSO quest) =>
+            throw new NotImplementedException();
+
+        public IReadOnlyList<QuestInstance> GetVisibleQuests() =>
+            throw new NotImplementedException();
+
+        public event Action<QuestInstance> OnQuestAdded;
+        public event Action<QuestInstance, QuestObjectiveInstance> OnQuestObjectiveTicked;
+        public event Action<QuestInstance> OnQuestCompleted;
         public event Func<UniTask> OnAllQuestsCompleted;
 
         public UniTask InitializeService()

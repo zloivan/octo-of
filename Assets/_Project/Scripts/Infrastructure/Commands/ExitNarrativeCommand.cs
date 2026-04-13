@@ -2,7 +2,7 @@ using System;
 using JetBrains.Annotations;
 using Naninovel;
 using Naninovel.Commands;
-using OnlyFarms.Infrastructure.DataAccess;
+using OnlyFarms.DataAccess;
 using OnlyFarms.Infrastructure.Services;
 
 namespace OnlyFarms.Infrastructure.Commands

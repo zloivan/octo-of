@@ -1,6 +1,6 @@
 using OnlyFarms.Domain.Hotspots;
 
-namespace OnlyFarms.UI
+namespace OnlyFarms.Presentation
 {
     public class HotspotViewModel
     {

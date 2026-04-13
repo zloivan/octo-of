@@ -1,6 +1,6 @@
 using Naninovel;
 
-namespace OnlyFarms.Infrastructure.DataAccess
+namespace OnlyFarms.DataAccess
 {
     [EditInProjectSettings]
     public class GameConfig : Configuration

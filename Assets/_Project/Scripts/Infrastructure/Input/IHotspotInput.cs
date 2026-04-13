@@ -1,6 +1,6 @@
 using System;
 
-namespace OnlyFarms.Input
+namespace OnlyFarms.Infrastructure.Input
 {
     public interface IHotspotInput
     {

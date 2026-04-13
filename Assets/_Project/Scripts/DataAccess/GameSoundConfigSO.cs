@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace OnlyFarms.Infrastructure.DataAccess
+namespace OnlyFarms.DataAccess
 {
     [CreateAssetMenu(fileName = "New Game Sound", menuName = "Configs/GameSoundConfig", order = 0)]
     public class GameSoundConfigSO : ScriptableObject

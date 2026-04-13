@@ -1,7 +1,7 @@
 using JetBrains.Annotations;
 using Naninovel;
+using OnlyFarms.DataAccess;
 using OnlyFarms.Domain.Locations;
-using OnlyFarms.Infrastructure.DataAccess;
 using OnlyFarms.Utilities;
 
 namespace OnlyFarms.Infrastructure.Services

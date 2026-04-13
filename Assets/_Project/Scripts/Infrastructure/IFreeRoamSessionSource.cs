@@ -1,4 +1,4 @@
-namespace OnlyFarms.Infrastructure.DataAccess
+namespace OnlyFarms.Infrastructure
 {
     public interface IFreeRoamSessionSource
     {

@@ -3,7 +3,7 @@ using OnlyFarms.Domain.Hotspots;
 using OnlyFarms.Domain.Locations;
 using UnityEngine;
 
-namespace OnlyFarms.Infrastructure.DataAccess
+namespace OnlyFarms.DataAccess
 {
     [CreateAssetMenu(fileName = "New Location Config", menuName = "Configs/Locations/Location Config", order = 0)]
     public class LocationConfigSO : ScriptableObject, ILocationRepository, IHotspotRepository

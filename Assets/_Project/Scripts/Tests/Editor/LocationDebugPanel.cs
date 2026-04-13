@@ -1,7 +1,8 @@
 #if UNITY_EDITOR
 using System.Threading;
 using Naninovel;
-using OnlyFarms.Infrastructure.DataAccess;
+using OnlyFarms.DataAccess;
+using OnlyFarms.Infrastructure;
 using OnlyFarms.Infrastructure.Services;
 using UnityEditor;
 using UnityEngine;

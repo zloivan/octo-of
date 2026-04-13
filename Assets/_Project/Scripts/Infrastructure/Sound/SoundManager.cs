@@ -1,8 +1,8 @@
 using Naninovel;
-using OnlyFarms.Infrastructure.DataAccess;
+using OnlyFarms.DataAccess;
 using OnlyFarms.Infrastructure.Services;
 
-namespace OnlyFarms.Core
+namespace OnlyFarms.Infrastructure.Sound
 {
     [InitializeAtRuntime]
     public class SoundManager : IEngineService

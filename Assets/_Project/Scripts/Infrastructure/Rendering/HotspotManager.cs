@@ -1,12 +1,13 @@
 using System.Linq;
 using Naninovel;
 using OnlyFarms.Domain.Hotspots;
-using OnlyFarms.Input;
+using OnlyFarms.Infrastructure.Input;
+using OnlyFarms.Presentation;
 using OnlyFarms.UI;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
-namespace OnlyFarms.Core
+namespace OnlyFarms.Infrastructure.Rendering
 {
     //TODO: Этот класс имеет кучу херовых практик, пройтись и отрефакторить!
     // это скорее спаунер или факбрика хотспотов

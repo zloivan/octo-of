@@ -1,6 +1,6 @@
 using OnlyFarms.Infrastructure.Services;
 
-namespace OnlyFarms.Input
+namespace OnlyFarms.Infrastructure.Input
 {
     public class LocationHotspotMapper
     {

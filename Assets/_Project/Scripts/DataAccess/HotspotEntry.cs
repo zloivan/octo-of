@@ -2,7 +2,7 @@ using System;
 using OnlyFarms.Domain.Hotspots;
 using UnityEngine;
 
-namespace OnlyFarms.Infrastructure.DataAccess
+namespace OnlyFarms.DataAccess
 {
     [Serializable]
     public class HotspotEntry

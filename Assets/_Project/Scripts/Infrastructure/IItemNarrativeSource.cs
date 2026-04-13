@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace OnlyFarms.Infrastructure.DataAccess
+namespace OnlyFarms.Infrastructure
 {
     public interface IItemNarrativeSource
     {

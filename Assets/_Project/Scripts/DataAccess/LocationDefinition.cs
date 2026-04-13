@@ -2,7 +2,7 @@ using System;
 using OnlyFarms.Domain.Locations;
 using UnityEngine.AddressableAssets;
 
-namespace OnlyFarms.Infrastructure.DataAccess
+namespace OnlyFarms.DataAccess
 {
     [Serializable]
     public class LocationDefinition

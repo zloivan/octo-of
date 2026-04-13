@@ -1,5 +1,5 @@
 using System;
-using OnlyFarms.Input;
+using OnlyFarms.Infrastructure.Input;
 using UnityEngine;
 
 namespace OnlyFarms.UI
