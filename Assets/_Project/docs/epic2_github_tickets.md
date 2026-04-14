@@ -1028,17 +1028,17 @@ public class QuestSoundObserver : IEngineService
 
     public UniTask InitializeService()
     {
-        _questService.OnObjectiveTicked    += OnObjectiveTicked;
-        _questService.OnQuestCompleted     += OnQuestCompleted;
-        _questService.OnAllQuestsCompleted += OnAllQuestsCompleted;
+        _questService.OnQuestObjectiveTicked += OnObjectiveTicked;
+        _questService.OnQuestCompleted       += OnQuestCompleted;
+        _questService.OnAllQuestsCompleted   += OnAllQuestsCompleted;
         return UniTask.CompletedTask;
     }
 
     public void DestroyService()
     {
-        _questService.OnObjectiveTicked    -= OnObjectiveTicked;
-        _questService.OnQuestCompleted     -= OnQuestCompleted;
-        _questService.OnAllQuestsCompleted -= OnAllQuestsCompleted;
+        _questService.OnQuestObjectiveTicked -= OnObjectiveTicked;
+        _questService.OnQuestCompleted       -= OnQuestCompleted;
+        _questService.OnAllQuestsCompleted   -= OnAllQuestsCompleted;
     }
 
     public void ResetService() { }
@@ -1085,8 +1085,8 @@ public class QuestSoundObserver : IEngineService
 ```csharp
 public void StartDay(string dayId)
 {
-    var config = _questRepository.GetDayConfig(dayId);
-    _questService.ActivateDaySession(config);
+    _questService.ActivateDaySession(dayId);
+    var config = _gameConfig.QuestConfig.GetDayConfig(dayId);
     _gameFlowService.SetSessionSource(new DaySessionSource(config));
 }
 ```
@@ -1102,8 +1102,8 @@ public class DaySessionSource : IFreeRoamSessionSource
         _config = config;
     }
 
-    public string GetReturnScript() => _config.ReturnScript;
-    public string GetReturnLabel()  => _config.ReturnLabel;
+    public string GetReturnScript() => _config.GetReturnScript();
+    public string GetReturnLabel()  => _config.GetReturnLabel();
 }
 ```
 
@@ -1117,6 +1117,8 @@ public void ClearSessionSource()
 ```
 
 > `ClearSessionSource` вызывается при возврате из free roam в нарратив — чтобы сервис не держал устаревший source.
+
+> **Примечание:** `DayConfigSO` должен иметь методы `GetReturnScript()` и `GetReturnLabel()`, которые читают из поля `NaniScriptReference _naniScriptReference`.
 
 ---
 
@@ -1153,7 +1155,9 @@ ViewModel-слой. `QuestPanelViewModel` — `IEngineService`, регистри
 ```csharp
 public class QuestEntryViewModel
 {
-    public string DisplayText   { get; }
+    private string _displayText;
+    public string DisplayText => _displayText;
+    
     public string ObjectiveText { get; private set; }
     public int    CurrentCount  { get; private set; }
     public int    RequiredCount { get; private set; }
@@ -1164,16 +1168,16 @@ public class QuestEntryViewModel
 
     public QuestEntryViewModel(QuestInstance instance)
     {
-        DisplayText = instance.Definition.DisplayText;
+        _displayText = instance.GetDefinition().GetDisplayName();
         RefreshFromInstance(instance);
     }
 
     // Вызывается QuestPanelViewModel при получении OnObjectiveTicked
     internal void NotifyProgress(QuestObjectiveInstance objective)
     {
-        CurrentCount  = objective.CurrentCount;
-        RequiredCount = objective.Definition.RequiredCount;
-        ObjectiveText = objective.Definition.DisplayText;
+        CurrentCount  = objective.GetCurrentCount();
+        RequiredCount = objective.GetDefinition().RequiredCount;
+        ObjectiveText = objective.GetDefinition().DisplayText;
         OnProgressChanged?.Invoke();
     }
 
@@ -1186,12 +1190,11 @@ public class QuestEntryViewModel
 
     private void RefreshFromInstance(QuestInstance instance)
     {
-        var first = instance.Objectives.FirstOrDefault(o => !o.IsCompleted)
-                    ?? instance.Objectives.FirstOrDefault();
-        if (first == null) return;
-        ObjectiveText = first.Definition.DisplayText;
-        CurrentCount  = first.CurrentCount;
-        RequiredCount = first.Definition.RequiredCount;
+        var current = instance.GetCurrentObjective();
+        if (current == null) return;
+        ObjectiveText = current.GetDefinition().DisplayText;
+        CurrentCount  = current.GetCurrentCount();
+        RequiredCount = current.GetDefinition().RequiredCount;
     }
 }
 ```
@@ -1219,19 +1222,19 @@ public class QuestPanelViewModel : IEngineService
 
     public UniTask InitializeService()
     {
-        _questService.OnQuestAdded          += HandleQuestAdded;
-        _questService.OnObjectiveTicked     += HandleObjectiveTicked;
-        _questService.OnQuestCompleted      += HandleQuestCompleted;
-        _questService.OnAllQuestsCompleted  += HandleAllCompleted;
+        _questService.OnQuestAdded            += HandleQuestAdded;
+        _questService.OnQuestObjectiveTicked  += HandleObjectiveTicked;
+        _questService.OnQuestCompleted        += HandleQuestCompleted;
+        _questService.OnAllQuestsCompleted    += HandleAllCompleted;
         return UniTask.CompletedTask;
     }
 
     public void DestroyService()
     {
-        _questService.OnQuestAdded          -= HandleQuestAdded;
-        _questService.OnObjectiveTicked     -= HandleObjectiveTicked;
-        _questService.OnQuestCompleted      -= HandleQuestCompleted;
-        _questService.OnAllQuestsCompleted  -= HandleAllCompleted;
+        _questService.OnQuestAdded            -= HandleQuestAdded;
+        _questService.OnQuestObjectiveTicked  -= HandleObjectiveTicked;
+        _questService.OnQuestCompleted        -= HandleQuestCompleted;
+        _questService.OnAllQuestsCompleted    -= HandleAllCompleted;
     }
 
     public void ResetService()
@@ -1494,6 +1497,8 @@ public class QuestEntryView : MonoBehaviour
 
 Debug-инструменты для QA: команда для мгновенного завершения квестов и Editor-расширение для просмотра состояния.
 
+> `QuestDebugPanel` (Editor window, `OnlyFarms/Quest Debug Panel`) уже реализован и покрывает весь функционал по просмотру состояния. `ForceCompleteQuestsCommand` ещё не реализован.
+
 ---
 
 **Файл:** `Assets/Scripts/Quests/Commands/ForceCompleteQuestsCommand.cs`
@@ -1509,43 +1514,17 @@ public class ForceCompleteQuestsCommand : Command
 }
 ```
 
-**Файл:** `Assets/Scripts/Quests/Editor/QuestServiceDebugWindow.cs`
-```csharp
-#if UNITY_EDITOR
-public class QuestServiceDebugWindow : EditorWindow
-{
-    [MenuItem("OnlyFarms/Quest Debug")]
-    public static void ShowWindow() => GetWindow<QuestServiceDebugWindow>("Quest Debug");
+**Файл:** `Assets/Scripts/Quests/Commands/ForceCompleteQuestsCommand.cs` (уже выше)
 
-    private void OnGUI()
-    {
-        if (!Application.isPlaying) { GUILayout.Label("Play mode only"); return; }
-
-        var service = Engine.GetService<QuestService>();
-        if (service == null) { GUILayout.Label("QuestService not found"); return; }
-
-        GUILayout.Label("Visible Quests:", EditorStyles.boldLabel);
-        foreach (var quest in service.GetVisibleQuests())
-        {
-            GUILayout.Label($"  • {quest.Definition.DisplayText} — {(quest.IsCompleted ? "✓" : "...")}");
-            foreach (var obj in quest.Objectives)
-                GUILayout.Label($"    [{obj.CurrentCount}/{obj.Definition.RequiredCount}] {obj.Definition.DisplayText}");
-        }
-
-        if (GUILayout.Button("Force Complete All"))
-            service.ForceComplete();
-    }
-}
-#endif
-```
+> `QuestDebugPanel` реализован в `Assets/Scripts/Quests/Editor/QuestDebugPanel.cs` и доступен через `OnlyFarms → Quest Debug Panel`. Панель отображает все квесты, прогресс объективов и содержит кнопку "Force Complete All".
 
 ---
 
 #### Acceptance Criteria
-- [ ] `@forceCompleteQuests` в `.nani` скрипте завершает все квесты и файрит `OnAllQuestsCompleted`.
-- [ ] `Quest Debug` окно открывается через `OnlyFarms → Quest Debug`.
-- [ ] Окно отображает текущие квесты и прогресс объективов в play mode.
-- [ ] Кнопка "Force Complete All" работает корректно.
+- [ ] `@forceCompleteQuests` — ещё не реализован
+- [x] Debug окно реализовано (QuestDebugPanel)
+- [x] Окно отображает квесты и прогресс
+- [x] Кнопка Force Complete работает
 
 ---
 

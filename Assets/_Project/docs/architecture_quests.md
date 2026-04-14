@@ -52,6 +52,8 @@ public class QuestObjectiveDefinition
 }
 ```
 
+> **Видимость целей:** Все квесты дня видны одновременно. Каждый квест отображает только первый незавершённый objective через `GetCurrentObjective()`. Когда objective выполнен — квест обновляет отображаемый текст на следующий. Когда все objectives выполнены — квест завершается.
+
 ### QuestDefinition (pure C# DTO — аналог HotspotData)
 
 ```csharp
@@ -59,10 +61,11 @@ public class QuestDefinition
 {
     public string GetDisplayName()                 { ... }
     public QuestObjectiveDefinition[] GetObjectives()  { ... }
-    public bool IsSequential()                    { ... }
-    // IsSequential: следующий квест в QuestSession становится видимым
-    // только после завершения предыдущего.
-    // Порядок внутри одного квеста всегда определяется порядком Objectives[].
+    
+    public QuestDefinition(string displayName, QuestObjectiveDefinition[] objectivesArray)
+    {
+        // Порядок внутри одного квеста всегда определяется порядком objectivesArray[].
+    }
 }
 ```
 
@@ -108,6 +111,10 @@ public class QuestInstance
     public QuestObjectiveInstance[] GetObjectives() { ... }
     public bool IsCompleted() { ... }
 
+    // Первый незавершённый objective — то что показывает UI
+    public QuestObjectiveInstance GetCurrentObjective() =>
+        GetObjectives().FirstOrDefault(o => !o.IsCompleted());
+
     // TryReport форвардит во все невыполненные объективы,
     // возвращает тот что был прогрессирован (или null)
     public QuestObjectiveInstance TryReport(string eventId) { ... }
@@ -137,23 +144,28 @@ public readonly struct QuestEventResult
 public class QuestSession
 {
     private readonly List<QuestInstance> _quests;
-    private int _visibleCount; // для IsSequential: сколько квестов сейчас видно
 
-    public IReadOnlyList<QuestInstance> VisibleQuests { get; } // только видимые
-    public bool AllCompleted => _quests.All(q => q.IsCompleted);
+    public IReadOnlyList<QuestInstance> GetVisibleQuests() { ... } // возвращает ВСЕ квесты
+    public bool AreAllCompleted() => _quests.All(q => q.IsCompleted());
 
-    // Возвращает populated result если прогресс был засчитан, иначе QuestEventResult.None
-    public QuestEventResult ReportEvent(string eventId) { ... }
-
-    // Вызывается после завершения квеста — раскрывает следующий если IsSequential
-    private void AdvanceVisibility() { ... }
+    // Возвращает populated result если прогресс был засчитан на ЛЮБОЙ стадии, иначе QuestEventResult.None
+    public QuestEventResult ReportEvent(string eventId)
+    {
+        foreach (var quest in _quests)
+        {
+            var objective = quest.TryReport(eventId);
+            if (objective == null) continue;
+            return new QuestEventResult(quest, objective);
+        }
+        return QuestEventResult.None;
+    }
 
     public QuestSessionSnapshot GetSnapshot();
     public void LoadSnapshot(QuestSessionSnapshot snapshot);
 }
 ```
 
-Ответ на вопрос "кто управляет sequential-видимостью": `QuestSession`, не UI и не сервис.
+Все квесты видны одновременно через `GetVisibleQuests()`. Текущий objective каждого квеста определяется `GetCurrentObjective()`.
 
 ### QuestSessionSnapshot ([Serializable])
 
@@ -161,8 +173,7 @@ public class QuestSession
 [Serializable]
 public class QuestSessionSnapshot
 {
-    public QuestObjectiveProgress[] ObjectiveProgress; // CurrentCount per objective
-    public int VisibleCount;
+    public QuestObjectiveProgress[] ObjectiveProgress;
 }
 
 [Serializable]
@@ -176,7 +187,7 @@ public class QuestObjectiveProgress
 
 Квесты идентифицируются по индексу в `DayConfigSO.Quests[]` — не по SO-ссылке.
 
-**Важно (Ticket 2.4.1):** `DayId` больше НЕ хранится в `QuestSessionSnapshot`. Вместо этого используется `QuestServiceState`:
+**Важно (Ticket 2.4.1):** `DayId` больше НЕ хранится в `QuestSessionSnapshot`, и `VisibleCount` тоже удален. Вместо этого используется `QuestServiceState`:
 
 ```csharp
 [Serializable]
@@ -198,11 +209,10 @@ public class QuestServiceState
 ```csharp
 public class QuestDefinitionSO : ScriptableObject
 {
-    public string DisplayText;
+    public string DisplayName;
     public QuestObjectiveDefinition[] Objectives;
-    public bool IsSequential;
 
-    public QuestDefinition ToDefinition() => new QuestDefinition(DisplayText, Objectives, IsSequential);
+    public QuestDefinition ToDefinition() => new QuestDefinition(DisplayName, Objectives);
 
     private void OnValidate()
     {
@@ -280,7 +290,7 @@ public class QuestService : IStatefulService<GameStateMap>, IQuestStatusSource
 
     // Доменные события (sync) — слушают QuestPanelViewModel и QuestSoundObserver
     public event Action<QuestInstance>                              OnQuestAdded;
-    public event Action<QuestInstance, QuestObjectiveInstance>      OnObjectiveTicked;
+    public event Action<QuestInstance, QuestObjectiveInstance>      OnQuestObjectiveTicked;
     public event Action<QuestInstance>                              OnQuestCompleted;
 
     // Debug only
@@ -361,7 +371,7 @@ public class QuestSoundObserver : IEngineService
 
     public UniTask InitializeService()
     {
-        _questService.OnObjectiveTicked += OnObjectiveTicked;
+        _questService.OnQuestObjectiveTicked += OnObjectiveTicked;
         _questService.OnQuestCompleted  += OnQuestCompleted;
         _questService.OnAllQuestsCompleted += OnAllQuestsCompleted;
         return UniTask.CompletedTask;
@@ -369,7 +379,7 @@ public class QuestSoundObserver : IEngineService
 
     public void DestroyService()
     {
-        _questService.OnObjectiveTicked    -= OnObjectiveTicked;
+        _questService.OnQuestObjectiveTicked    -= OnObjectiveTicked;
         _questService.OnQuestCompleted     -= OnQuestCompleted;
         _questService.OnAllQuestsCompleted -= OnAllQuestsCompleted;
     }
@@ -512,7 +522,7 @@ public class QuestPanelViewModel : IEngineService
     public UniTask InitializeService()
     {
         _questService.OnQuestAdded         += HandleQuestAdded;
-        _questService.OnObjectiveTicked    += HandleObjectiveTicked;
+        _questService.OnQuestObjectiveTicked    += HandleObjectiveTicked;
         _questService.OnQuestCompleted     += HandleQuestCompleted;
         _questService.OnAllQuestsCompleted += HandleAllCompleted;
         return UniTask.CompletedTask;
@@ -691,12 +701,11 @@ public class HotspotValidator : IHotspotValidator
       → QuestProgressObserver → IQuestProgressReporter.ReportEvent("backyard")
           → QuestService → QuestSession.ReportEvent("backyard")
               → QuestInstance.TryReport → QuestObjectiveInstance.TryReport
-                  → OnObjectiveTicked(quest, objective)  → QuestPanelViewModel → QuestEntryViewModel.NotifyProgress
+                  → OnQuestObjectiveTicked(quest, objective)  → QuestPanelViewModel → QuestEntryViewModel.NotifyProgress
                                                          → QuestSoundObserver → quest_ticked
               → если квест завершён: OnQuestCompleted(quest)
                   → QuestPanelViewModel → QuestEntryViewModel.NotifyCompleted → QuestPanelUI.RemoveEntry
                   → QuestSoundObserver → quest_crossed
-                  → QuestSession.AdvanceVisibility() → если IsSequential: OnQuestAdded(nextQuest)
               → если все квесты завершены:
                   → OnAllQuestsCompleted (Func<UniTask>)
                       → GameFlowService.LaunchNarrativeAsync(returnScript, returnLabel)
@@ -716,7 +725,7 @@ public class HotspotValidator : IHotspotValidator
 1. Вызывает `ActivateDaySession(state.DayId)` — разрешает квесты
 2. Вызывает `_session.LoadSnapshot(state.Snapshot)` — восстанавливает прогресс
 
-`QuestSessionSnapshot` больше не содержит `DayId` — это упрощает контракт между сессией и сервисом.
+`QuestSessionSnapshot` теперь содержит только `ObjectiveProgress` — это упрощает контракт между сессией и сервисом.
 
 `QuestPanelUI.OnEnable` проходит по `QuestPanelViewModel.ActiveQuests` и восстанавливает UI —
 это покрывает сценарий загрузки сохранения во время free roam.
@@ -726,7 +735,15 @@ public class HotspotValidator : IHotspotValidator
 
 ---
 
-## 12. Граф зависимостей
+## 12. Тестирование — QuestDebugPanel
+
+**AC тестирование** для `QuestService` покрывается через `QuestDebugPanel` — Editor window.
+Расположение: `Assets/_Project/Scripts/Tests/Editor/QuestDebugPanel.cs`.
+Доступ в Editor: `Window → OnlyFarms → Quest Debug Panel`.
+
+---
+
+## 13. Граф зависимостей
 
 ```
 .nani скрипты
@@ -741,7 +758,7 @@ QuestProgressService : IQuestProgressReporter
   → QuestService (internal progress update)
 
 QuestService (файрит события, ни о ком не знает)
-  → OnQuestAdded, OnObjectiveTicked, OnQuestCompleted  ← QuestPanelViewModel
+  → OnQuestAdded, OnQuestObjectiveTicked, OnQuestCompleted  ← QuestPanelViewModel
                                                         ← QuestSoundObserver
   → OnAllQuestsCompleted (Func<UniTask>)               ← GameFlowService
 
@@ -767,7 +784,7 @@ HotspotValidator (Infrastructure)
 
 ---
 
-## 13. Что НЕ делаем в квестах
+## 14. Что НЕ делаем в квестах
 
 - Строковые ID квестов в рантайме — только `QuestEventId.*` константы
 - `QuestDefinitionSO` в доменных классах — только `QuestDefinition` DTO
