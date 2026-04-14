@@ -6,24 +6,27 @@ namespace OnlyFarms.Infrastructure.Services
     [InitializeAtRuntime]
     public class QuestProgressService : IEngineService, IQuestProgressReporter
     {
+
+        private readonly QuestService _questService;
+
+        public QuestProgressService(QuestService questService) =>
+            _questService = questService;
+
         public UniTask InitializeService()
         {
             OFLogger.Log("<color=blue>Initialize...</color>");
             return UniTask.CompletedTask;
         }
 
-        public void ResetService()
-        {
+        public void ResetService() =>
             OFLogger.Log("<color=yellow>Reset called...</color>");
-        }
 
-        public void DestroyService()
-        {
+        public void DestroyService() =>
             OFLogger.Log("<color=red>DestroyService called...</color>");
-        }
 
         public void ReportEvent(string eventId)
         {
+            _questService.ReportEventInternal(eventId);
             OFLogger.Log($"Quest event: {eventId} reported...");
         }
     }
