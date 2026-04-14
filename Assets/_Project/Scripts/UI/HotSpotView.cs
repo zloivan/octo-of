@@ -37,7 +37,7 @@ namespace OnlyFarms.UI
         public void Setup(HotspotViewModel viewModel)
         {
             _viewModel = viewModel;
-            if (_viewModel.HasLable())
+            if (_viewModel.HasLabel())
             {
                 _textMeshPro.text = viewModel.GetHotspotLabel();
             }
@@ -96,7 +96,7 @@ namespace OnlyFarms.UI
         public void OnPointerEnter(PointerEventData eventData)
         {
             SetBrightness(5f);
-            if (_viewModel.HasLable())
+            if (_viewModel.HasLabel())
             {
                 _textMeshPro?.gameObject.SetActive(true);
             }
@@ -108,7 +108,7 @@ namespace OnlyFarms.UI
         public void OnPointerExit(PointerEventData eventData)
         {
             SetBrightness(.5f);
-            if (_viewModel.HasLable())
+            if (_viewModel.HasLabel())
             {
                 _textMeshPro?.gameObject.SetActive(false);
             }

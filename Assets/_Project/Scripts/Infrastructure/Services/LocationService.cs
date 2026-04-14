@@ -142,6 +142,15 @@ namespace OnlyFarms.Infrastructure.Services
             OnLocationEnterCompleted?.Invoke(_locationLogic.GetCurrentLocation());
             OFLogger.Log($"LocationService entered {_locationLogic.GetCurrentLocation().Id}");
         }
+        
+        public void RefreshConditionalHotspots()
+        {
+            var locationId = GetCurrentLocationId();
+            if (string.IsNullOrEmpty(locationId)) return;
+
+            foreach (var hotspot in _hotspotLogic.GetAvailableHotspots(locationId))
+                _hotspotManager.ActivateHotspot(hotspot);
+        }
 
         public async UniTask GoBack(AsyncToken ct)
         {

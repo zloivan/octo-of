@@ -24,6 +24,7 @@ namespace OnlyFarms.DataAccess
         [SerializeField] private string _label;
         [SerializeField] private QuestDefinitionSO _questDefinitionSO;
 
+        
         public HotspotData GetHotspotData(string locationID) =>
             new(_id, _type, _condition, _conditionValue, _targetLocationId, locationID, _label,
                 _questDefinitionSO?.ToDefinition() ?? null);

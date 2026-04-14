@@ -11,7 +11,7 @@ namespace OnlyFarms.Presentation
         public string GetHotspotLabel() =>
             _hotspotData.Label;
 
-        public bool HasLable() =>
+        public bool HasLabel() =>
             _hotspotData.Type == HotspotType.Transition;
     }
 }

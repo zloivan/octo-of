@@ -49,6 +49,7 @@ namespace OnlyFarms.Infrastructure.Rendering
                 var active = spot != null;
                 
                 view.gameObject.SetActive(active);
+                
                 if (active)
                 {
                     _mouseInput.Register(view);
@@ -74,6 +75,19 @@ namespace OnlyFarms.Infrastructure.Rendering
                 return;
             
             _container.SetActive(visible);
+        }
+        
+        public void ActivateHotspot(HotspotData hotspot)
+        {
+            if (_container == null) return;
+
+            var view = _hotspotViews.FirstOrDefault(v => v.GetId() == hotspot.Id);
+            if (view == null || view.gameObject.activeSelf) return; // уже активен — пропускаем
+
+            _mouseInput.Register(view);
+            view.SetShimmer(hotspot.Type == HotspotType.Item);
+            view.Setup(new HotspotViewModel(hotspot));
+            view.gameObject.SetActive(true);
         }
 
         public void Unload()
