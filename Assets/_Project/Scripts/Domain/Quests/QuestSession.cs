@@ -8,8 +8,6 @@ namespace OnlyFarms.Domain
     public class QuestSession
     {
         private readonly List<QuestInstance> _questsList;
-        private readonly bool _isSequential;
-        private int _visibleCount;
 
         public QuestSession(IEnumerable<QuestDefinition> definitions)
         {
@@ -19,8 +17,6 @@ namespace OnlyFarms.Domain
             }
 
             _questsList = definitions.Select(d => new QuestInstance(d)).ToList();
-            _isSequential = _questsList.Count > 0 && _questsList[0].GetDefinition().IsSequential();
-            _visibleCount = _isSequential ? Math.Min(1, _questsList.Count) : _questsList.Count;
         }
 
         public QuestEventResult ReportEvent(string eventId)
@@ -32,10 +28,6 @@ namespace OnlyFarms.Domain
                 if (objective == null) 
                     continue;
                 
-                if (!quest.IsCompleted()) 
-                    continue;
-                
-                AdvanceVisibility();
                 return new QuestEventResult(quest, objective);
             }
 
@@ -44,18 +36,12 @@ namespace OnlyFarms.Domain
 
         public IReadOnlyList<QuestInstance> GetAllQuestsList() =>
             _questsList;
-
+        
         public IReadOnlyList<QuestInstance> GetVisibleQuests() =>
-            _questsList.Take(_visibleCount).ToList();
+            GetAllQuestsList();
 
         public bool AreAllCompleted() =>
             _questsList.All(q => q.IsCompleted());
-
-        private void AdvanceVisibility()
-        {
-            if (_isSequential && _visibleCount < _questsList.Count)
-                _visibleCount++;
-        }
 
         public QuestSessionSnapshot GetSnapshot()
         {
@@ -79,7 +65,6 @@ namespace OnlyFarms.Domain
             return new QuestSessionSnapshot
             {
                 ObjectiveProgress = progress.ToArray(),
-                VisibleCount = _visibleCount,
             };
         }
 
@@ -88,23 +73,16 @@ namespace OnlyFarms.Domain
             foreach (var p in snapshot.ObjectiveProgress)
             {
                 if (p.QuestIndex >= _questsList.Count)
-                {
                     continue;
-                }
 
                 if (p.ObjectiveIndex >= _questsList[p.QuestIndex].GetObjectives().Length)
-                {
                     continue;
-                }
 
                 var obj = _questsList[p.QuestIndex].GetObjectives()[p.ObjectiveIndex];
-                for (var i = 0; i < p.CurrentCount; i++)
-                {
+                
+                for (var i = 0; i < p.CurrentCount; i++) 
                     obj.TryReport(obj.GetDefinition().EventId);
-                }
             }
-
-            _visibleCount = Mathf.Clamp(snapshot.VisibleCount, 0, _questsList.Count);
         }
     }
 }

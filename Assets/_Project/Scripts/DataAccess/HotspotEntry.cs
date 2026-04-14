@@ -26,6 +26,6 @@ namespace OnlyFarms.DataAccess
 
         public HotspotData GetHotspotData(string locationID) =>
             new(_id, _type, _condition, _conditionValue, _targetLocationId, locationID, _label,
-                _questDefinitionSO.ToDefinition());
+                _questDefinitionSO?.ToDefinition() ?? null);
     }
 }

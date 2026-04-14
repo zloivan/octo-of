@@ -103,7 +103,6 @@ namespace OnlyFarms.UI
 
             SetDash(true);
             OnHovered?.Invoke();
-            OFLogger.Log("Pointer Enter");
         }
 
         public void OnPointerExit(PointerEventData eventData)
@@ -116,7 +115,6 @@ namespace OnlyFarms.UI
 
             SetDash(false);
             OnHoverExited?.Invoke();
-            OFLogger.Log("Pointer Exit");
         }
 
         public void OnPointerClick(PointerEventData eventData) =>

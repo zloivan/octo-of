@@ -10,10 +10,9 @@ namespace OnlyFarms.DataAccess
     {
         [SerializeField] private string _displayName;
         [SerializeField] private QuestObjectiveDefinition[] _objectivesList;
-        [SerializeField] private bool _isSequential;
 
         public QuestDefinition ToDefinition() =>
-            new(_displayName, _objectivesList, _isSequential);
+            new(_displayName, _objectivesList);
 
         private void OnValidate()
         {

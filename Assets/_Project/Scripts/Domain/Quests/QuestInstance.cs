@@ -15,7 +15,6 @@ namespace OnlyFarms.Domain
                 throw new ArgumentException("QuestDefinition can't be null and it has to have Objectives");
             }
 
-
             _definition = definition;
             _objectivesArray = _definition.GetObjectives()
                 .Select(d => new QuestObjectiveInstance(d))
@@ -27,6 +26,9 @@ namespace OnlyFarms.Domain
 
         public QuestDefinition GetDefinition() =>
             _definition;
+        
+        public QuestObjectiveInstance GetCurrentObjective() =>
+            _objectivesArray.FirstOrDefault(o => !o.IsCompleted());
 
         public QuestObjectiveInstance[] GetObjectives() =>
             _objectivesArray;

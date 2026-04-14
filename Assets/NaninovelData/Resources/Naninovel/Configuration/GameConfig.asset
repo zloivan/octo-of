@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   LocationConfig: {fileID: 11400000, guid: b995f8a32821d4218bc039f136702825, type: 2}
   SoundConfig: {fileID: 11400000, guid: 6061e40ac2d724d8c8c3ffdb6ca84781, type: 2}
+  QuestConfig: {fileID: 11400000, guid: 6210d628cda87405a95c83dee4f8aa34, type: 2}

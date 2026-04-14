@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using OnlyFarms.Domain;
 using OnlyFarms.Utilities;
 using UnityEngine;
 
@@ -10,8 +12,9 @@ namespace OnlyFarms.DataAccess
         [SerializeField] private string _dayId;
         [SerializeField] private QuestDefinitionSO[] _questsArray;
         [SerializeField] private NaniScriptReference _naniScriptReference;
-        
-        public string GetDayId() => _dayId;
+
+        public string GetDayId() =>
+            _dayId;
 
         private void OnValidate()
         {
@@ -30,5 +33,8 @@ namespace OnlyFarms.DataAccess
                 OFLogger.LogError($"{name}: ReturnScript is empty.", this);
             }
         }
+
+        public QuestDefinition[] GetDayQuests() =>
+            _questsArray.Select(qd => qd.ToDefinition()).ToArray();
     }
 }

@@ -16,7 +16,7 @@ namespace OnlyFarms.Domain.Hotspots
                 case ActivationCondition.Always:
                     return true;
                 case ActivationCondition.RequiresQuestId:
-                    return _questService?.IsQuestCompleted(hotspotData.QuestDefinition) ?? true;
+                    return _questService?.IsQuestCompleted(hotspotData.QuestDefinition.GetDisplayName()) ?? true;
                 case ActivationCondition.RequiresFlag:
                     return false;
                 default:

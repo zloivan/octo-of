@@ -1,7 +1,9 @@
+using OnlyFarms.Domain;
+
 namespace OnlyFarms.DataAccess
 {
     public interface IQuestRepository
     {
-        DayConfigSO GetDayConfig(string dayId);
+        QuestDefinition[] GetQuestsOfDay(string dayId);
     }
 }

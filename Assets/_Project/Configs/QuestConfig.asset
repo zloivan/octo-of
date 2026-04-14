@@ -12,5 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c9eb0e7ff114315a9423b8b71dae91d, type: 3}
   m_Name: QuestConfig
   m_EditorClassIdentifier: 
-  _dayConfigList:
+  _dayConfigArray:
   - {fileID: 11400000, guid: c05a76fd260e6452095c87f56f0bd6a3, type: 2}
+  - {fileID: 11400000, guid: 98b754683f60d4ce5a563ee5095ba93f, type: 2}
+  - {fileID: 11400000, guid: 179c2a3c45e374a51800598620820e24, type: 2}

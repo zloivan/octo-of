@@ -49,7 +49,7 @@ public static class LocationConfigCache
             {
                 var idProp = hotspotsProp
                     .GetArrayElementAtIndex(j)
-                    .FindPropertyRelative("Id");
+                    .FindPropertyRelative("_id");
 
                 if (!string.IsNullOrEmpty(idProp.stringValue))
                     HotspotIds.Add(idProp.stringValue);

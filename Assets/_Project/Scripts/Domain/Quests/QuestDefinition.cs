@@ -4,13 +4,11 @@ namespace OnlyFarms.Domain
     {
         private readonly string _displayName;
         private readonly QuestObjectiveDefinition[] _objectivesArray;
-        private readonly bool _isSequential;
 
-        public QuestDefinition(string displayName, QuestObjectiveDefinition[] objectivesArray, bool isSequential)
+        public QuestDefinition(string displayName, QuestObjectiveDefinition[] objectivesArray)
         {
             _displayName = displayName;
             _objectivesArray = objectivesArray;
-            _isSequential = isSequential;
         }
 
         public string GetDisplayName() =>
@@ -19,7 +17,6 @@ namespace OnlyFarms.Domain
         public QuestObjectiveDefinition[] GetObjectives() =>
             _objectivesArray;
 
-        public bool IsSequential() =>
-            _isSequential;
+       
     }
 }

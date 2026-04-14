@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using OnlyFarms.Domain;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -11,7 +12,10 @@ namespace OnlyFarms.DataAccess
         [FormerlySerializedAs("_dayConfigList")] [SerializeField]
         private DayConfigSO[] _dayConfigArray;
 
-        public DayConfigSO GetDayConfig(string dayId) =>
+        public QuestDefinition[] GetQuestsOfDay(string dayId) =>
+            GetDayConfig(dayId).GetDayQuests();
+
+        private DayConfigSO GetDayConfig(string dayId) =>
             _dayConfigArray.FirstOrDefault(d => d.GetDayId() == dayId)
             ?? throw new ArgumentException($"DayConfig not found: {dayId}");
     }
