@@ -29,16 +29,24 @@ namespace OnlyFarms.Infrastructure.Services
         {
             _locationService.OnLocationEnterCompleted -= LocationService_OnLocationEnterCompleted;
             _locationService.OnItemPickedUp -= LocationService_OnItemPickedUp;
+
+            OFLogger.Log("<color=red>Destroyed</color>");
         }
 
         public void ResetService()
         {
         }
 
-        private void LocationService_OnItemPickedUp(string hotspotId) =>
+        private void LocationService_OnItemPickedUp(string hotspotId)
+        {
+            OFLogger.Log($"Item picked: {hotspotId}");
             _progressReporter.ReportEvent(hotspotId);
+        }
 
-        private void LocationService_OnLocationEnterCompleted(LocationData locationData) =>
+        private void LocationService_OnLocationEnterCompleted(LocationData locationData)
+        {
+            OFLogger.Log($"Location visited: {locationData.Id}");
             _progressReporter.ReportEvent(locationData.Id);
+        }
     }
 }
