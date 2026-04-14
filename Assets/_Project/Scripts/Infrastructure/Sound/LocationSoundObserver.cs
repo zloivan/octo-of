@@ -5,13 +5,13 @@ using OnlyFarms.Infrastructure.Services;
 namespace OnlyFarms.Infrastructure.Sound
 {
     [InitializeAtRuntime]
-    public class SoundManager : IEngineService
+    public class LocationSoundObserver : IEngineService
     {
         private readonly GameSoundConfigSO _config;
         private readonly LocationService _locationService;
         private readonly IAudioManager _audioManager;
 
-        public SoundManager(GameConfig gameConfig, LocationService locationService, IAudioManager audioManager)
+        public LocationSoundObserver(GameConfig gameConfig, LocationService locationService, IAudioManager audioManager)
         {
             _config = gameConfig.SoundConfig;
             _locationService = locationService;
