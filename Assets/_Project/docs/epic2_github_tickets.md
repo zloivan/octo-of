@@ -1159,12 +1159,16 @@ ViewModel-слой. `QuestPanelViewModel` — `IEngineService`, регистри
 public class QuestEntryViewModel
 {
     private string _displayText;
-    public string DisplayText => _displayText;
-    
-    public string ObjectiveText { get; private set; }
-    public int    CurrentCount  { get; private set; }
-    public int    RequiredCount { get; private set; }
-    public bool   IsCompleted   { get; private set; }
+    private string _objectiveText;
+    private int    _currentCount;
+    private int    _requiredCount;
+    private bool   _isCompleted;
+
+    public string GetDisplayText()   => _displayText;
+    public string GetObjectiveText() => _objectiveText;
+    public int    GetCurrentCount()  => _currentCount;
+    public int    GetRequiredCount() => _requiredCount;
+    public bool   GetIsCompleted()   => _isCompleted;
 
     public event Action OnProgressChanged;
     public event Action OnCompleted;
@@ -1178,16 +1182,16 @@ public class QuestEntryViewModel
     // Вызывается QuestPanelViewModel при получении OnObjectiveTicked
     internal void NotifyProgress(QuestObjectiveInstance objective)
     {
-        CurrentCount  = objective.GetCurrentCount();
-        RequiredCount = objective.GetDefinition().RequiredCount;
-        ObjectiveText = objective.GetDefinition().DisplayText;
+        _currentCount  = objective.GetCurrentCount();
+        _requiredCount = objective.GetDefinition().RequiredCount;
+        _objectiveText = objective.GetDefinition().DisplayText;
         OnProgressChanged?.Invoke();
     }
 
     // Вызывается QuestPanelViewModel при получении OnQuestCompleted
     internal void NotifyCompleted()
     {
-        IsCompleted = true;
+        _isCompleted = true;
         OnCompleted?.Invoke();
     }
 
@@ -1195,9 +1199,9 @@ public class QuestEntryViewModel
     {
         var current = instance.GetCurrentObjective();
         if (current == null) return;
-        ObjectiveText = current.GetDefinition().DisplayText;
-        CurrentCount  = current.GetCurrentCount();
-        RequiredCount = current.GetDefinition().RequiredCount;
+        _objectiveText = current.GetDefinition().DisplayText;
+        _currentCount  = current.GetCurrentCount();
+        _requiredCount = current.GetDefinition().RequiredCount;
     }
 }
 ```
@@ -1211,7 +1215,7 @@ public class QuestPanelViewModel : IEngineService
     private readonly List<QuestEntryViewModel> _activeQuests = new();
     private readonly Dictionary<QuestInstance, QuestEntryViewModel> _vmMap = new();
 
-    public IReadOnlyList<QuestEntryViewModel> ActiveQuests => _activeQuests;
+    public IReadOnlyList<QuestEntryViewModel> GetActiveQuests() => _activeQuests;
 
     public event Action<QuestEntryViewModel> OnQuestAdded;
     public event Action<QuestEntryViewModel> OnQuestRemoved;
@@ -1328,7 +1332,7 @@ public class QuestPanelUI : CustomUI
         _viewModel.OnAllQuestsCompleted += Hide;
 
         // Восстановление состояния при загрузке (load-safe rebuild)
-        foreach (var vm in _viewModel.ActiveQuests)
+        foreach (var vm in _viewModel.GetActiveQuests())
             AddEntry(vm);
     }
 
@@ -1372,7 +1376,7 @@ public class QuestEntryView : MonoBehaviour
     public void Bind(QuestEntryViewModel vm)
     {
         _vm = vm;
-        _displayText.text = vm.DisplayText;
+        _displayText.text = vm.GetDisplayText();
         RefreshProgress();
 
         vm.OnProgressChanged += RefreshProgress;
@@ -1388,9 +1392,9 @@ public class QuestEntryView : MonoBehaviour
 
     private void RefreshProgress()
     {
-        _progressText.text = _vm.RequiredCount > 1
-            ? $"{_vm.ObjectiveText} ({_vm.CurrentCount}/{_vm.RequiredCount})"
-            : _vm.ObjectiveText;
+        _progressText.text = _vm.GetRequiredCount() > 1
+            ? $"{_vm.GetObjectiveText()} ({_vm.GetCurrentCount()}/{_vm.GetRequiredCount()})"
+            : _vm.GetObjectiveText();
     }
 
     private void OnCompleted()
@@ -1577,3 +1581,234 @@ private async UniTask OnAllQuestsCompleted()
 - [ ] `GameFlowService` инжектирует `IQuestStatusSource` (не `QuestService` напрямую).
 
 ---
+
+---
+
+## 🏁 Milestone: Tech Debt — Location System Refactor
+
+---
+
+### Ticket 2.7.1 — [REFACTOR] HotspotViewModel + HotSpotView — полная MVVM
+
+**Labels:** `refactor`, `ui`
+**Estimate:** 3h
+**Milestone:** Tech Debt — Location System Refactor
+**Depends on:** нет (изолированный рефактор)
+
+#### Описание
+
+Сейчас `HotspotManager` принимает решения за View (вызывает `SetShimmer`, создаёт `HotspotViewModel`, регистрирует input). View не самодостаточна. Цель: View полностью конфигурируется из ViewModel, сама вызывает ViewModel при событиях. Внешние системы не касаются View напрямую.
+
+---
+
+#### Что меняется
+
+**`HotspotViewModel`** — добавить полное UI-состояние и колбэки:
+
+```csharp
+public class HotspotViewModel
+{
+    private readonly HotspotData _hotspotData;
+    private readonly Action<string> _onClicked; // колбэк в LocationService
+
+    public HotspotViewModel(HotspotData hotspotData, Action<string> onClicked)
+    {
+        _hotspotData = hotspotData;
+        _onClicked   = onClicked;
+    }
+
+    public string GetId()               => _hotspotData.Id;
+    public string GetLabel()            => _hotspotData.Label;
+    public bool GetShouldShowLabel()    => _hotspotData.Type == HotspotType.Transition;
+    public bool GetShouldShowShimmer()  => _hotspotData.Type == HotspotType.Item;
+
+    public void NotifyClicked()         => _onClicked?.Invoke(_hotspotData.Id);
+}
+```
+
+**`HotSpotView`** — заменить `Setup` + внешний `SetShimmer` на `Bind`:
+
+```csharp
+// Убрать: Setup(HotspotViewModel), SetShimmer(bool) — публичный вызов снаружи
+// Добавить:
+public void Bind(HotspotViewModel viewModel)
+{
+    _viewModel = viewModel;
+
+    // View сама читает всё из VM
+    if (_viewModel.GetShouldShowLabel())
+        _textMeshPro.text = _viewModel.GetLabel();
+    _textMeshPro.gameObject.SetActive(false);
+
+    ApplyShimmer(_viewModel.GetShouldShowShimmer());
+}
+
+// Переименовать SetShimmer → ApplyShimmer (private)
+private void ApplyShimmer(bool isEnabled) { ... }
+
+// Pointer handlers — вызывают ViewModel, не файрят внешние события
+public void OnPointerClick(PointerEventData _) => _viewModel.NotifyClicked();
+```
+
+Убрать публичные события `OnClicked`, `OnHovered`, `OnHoverExited` — они больше не нужны снаружи.
+
+---
+
+#### Acceptance Criteria
+- [ ] `HotSpotView.Bind(vm)` — единственная точка конфигурации, вызывается один раз
+- [ ] `SetShimmer` не вызывается снаружи; View определяет shimmer из `vm.GetShouldShowShimmer()`
+- [ ] Клик на View → вызов `vm.NotifyClicked()` → колбэк в `LocationService.OnHotspotClicked`
+- [ ] Публичные события `OnClicked/OnHovered/OnHoverExited` убраны с View
+- [ ] `HotspotViewModel` не содержит ссылок на Unity-типы
+
+---
+
+### Ticket 2.7.2 — [REFACTOR] HotspotManager → HotspotSpawner
+
+**Labels:** `refactor`
+**Estimate:** 2h
+**Milestone:** Tech Debt — Location System Refactor
+**Depends on:** Ticket 2.7.1
+
+#### Описание
+
+`HotspotManager` нарушает SRP: загружает ассеты, инстанциирует префаб, создаёт VM, регистрирует input, управляет анимацией, включает/выключает хотспоты. Переименовать и разбить обязанности.
+
+---
+
+#### Что меняется
+
+**Переименовать** `HotspotManager` → `HotspotSpawner`. Единственная ответственность: загрузить префаб, биндить данные к View, управлять контейнером.
+
+```csharp
+public class HotspotSpawner
+{
+    // Убрать: _mouseInput из конструктора
+    // Убрать: создание HotspotViewModel
+    // Убрать: вызов SetShimmer
+    // Убрать: Register(view)
+
+    public async UniTask LoadAsync(
+        AssetReference prefabRef,
+        HotspotData[] activeHotspots,
+        Func<HotspotData, HotspotViewModel> vmFactory, // VM создаётся снаружи
+        float duration,
+        AsyncToken ct)
+    {
+        Unload();
+        // загрузить prefab, инстанциировать _container
+        _hotspotViews = _container.GetComponentsInChildren<HotSpotView>();
+        SetAlpha(0f);
+
+        foreach (var view in _hotspotViews)
+        {
+            var spot   = activeHotspots.FirstOrDefault(h => h.Id == view.GetId());
+            var active = spot != null;
+            view.gameObject.SetActive(active);
+            if (active)
+                view.Bind(vmFactory(spot)); // View сама конфигурируется
+        }
+
+        await FadeAsync(0f, 1f, duration, ct);
+    }
+
+    public void ActivateHotspot(HotspotData hotspot)
+    {
+        var view = _hotspotViews?.FirstOrDefault(v => v.GetId() == hotspot.Id);
+        if (view == null || view.gameObject.activeSelf) return;
+        view.Bind(new HotspotViewModel(hotspot, /* колбэк передаётся снаружи */));
+        view.gameObject.SetActive(true);
+    }
+}
+```
+
+**Регистрация input** переезжает в `LocationHotspotMapper` — он уже знает о связи между View и input.
+
+---
+
+#### Acceptance Criteria
+- [ ] Класс переименован в `HotspotSpawner`
+- [ ] Конструктор не принимает `MouseHotspotInput`
+- [ ] `LoadAsync` не создаёт `HotspotViewModel` напрямую — принимает `Func<HotspotData, HotspotViewModel>`
+- [ ] `LoadAsync` не вызывает `SetShimmer` напрямую
+- [ ] Регистрация input (`_mouseInput.Register`) убрана из `HotspotSpawner`
+
+---
+
+### Ticket 2.7.3 — [REFACTOR] LocationService — убрать логику, оставить фасад
+
+**Labels:** `refactor`, `service`
+**Estimate:** 3h
+**Milestone:** Tech Debt — Location System Refactor
+**Depends on:** Ticket 2.7.2
+
+#### Описание
+
+`LocationService` сейчас является god-объектом: создаёт GameObject'ы, содержит switch-логику кликов, вызывает `Engine.GetService` внутри `InitializeService`, управляет UI raycaster'ами. Цель — чистый фасад.
+
+---
+
+#### Конкретные правки
+
+**1. Убрать `Engine.GetService<QuestService>()` из `InitializeService`:**
+```csharp
+// Было
+var questService = Engine.GetService<QuestService>();
+_hotspotLogic = new HotspotLogic(_config, new HotspotValidator(questService));
+
+// Стало — инджектить QuestService через конструктор
+public LocationService(GameConfig gameConfig, IBackgroundManager bg,
+                       IScriptPlayer scriptPlayer, QuestService questService)
+{
+    ...
+    // questService хранится для передачи в HotspotValidator при InitializeService
+}
+```
+
+**2. Извлечь `ApplyInputWorkaroundsAsync` из LocationService:**
+
+Переместить в bootstrap startup код. Не создавать отдельный IEngineService — порядок инициализации критичен.
+
+**3. Извлечь switch в `OnHotspotClicked`:**
+
+```csharp
+// Было: switch в LocationService
+// Стало: делегировать в HotspotInteractionHandler
+
+public class HotspotInteractionHandler
+{
+    private readonly HotspotLogic _hotspotLogic;
+
+    public event Action<string> OnTransitionRequested; // LocationService слушает
+    public event Action<string> OnItemPickedUp;
+
+    public void Handle(string hotspotId)
+    {
+        var hotspot = _hotspotLogic.GetHotspotData(hotspotId);
+        switch (hotspot.Type)
+        {
+            case HotspotType.Transition:
+                OnTransitionRequested?.Invoke(hotspot.TargetLocationId);
+                break;
+            case HotspotType.Item:
+                if (_hotspotLogic.TryConsume(hotspotId))
+                    OnItemPickedUp?.Invoke(hotspotId);
+                break;
+        }
+    }
+}
+```
+
+`LocationService` только слушает `OnTransitionRequested` → вызывает `Enter`. Логика типов хотспотов уходит из сервиса.
+
+**4. Создание `GameObject("HotspotInput")` переехать в фабрику или bootstrap.**
+
+---
+
+#### Acceptance Criteria
+- [ ] `Engine.GetService<>()` в `InitializeService` убран — `QuestService` инджектится через конструктор
+- [ ] `ApplyInputWorkaroundsAsync` убран из `LocationService` и перемещён в bootstrap/startup код (не в новый IEngineService — порядок инициализации не гарантирован)
+- [ ] `OnHotspotClicked` switch убран — делегирован в `HotspotInteractionHandler`
+- [ ] `LocationService` не создаёт `GameObject` напрямую
+- [ ] `LocationService` публичный контракт не изменился (события, `Enter`, `GoBack`, `SetFreeRoamMode`)
+
