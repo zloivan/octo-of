@@ -11,7 +11,7 @@ namespace OnlyFarms.DataAccess
         [SerializeField] private HotspotType Type;
         [SerializeField] private ActivationCondition Condition;
         [SerializeField] private string ConditionValue; //TODO: String identifier not good
-        [SerializeField] private string _targetLocationId;
+        [SerializeField][LocationId] private string _targetLocationId;
         [SerializeField] private string _label;
         [SerializeField] private QuestDefinitionSO _questDefinitionSO;
 

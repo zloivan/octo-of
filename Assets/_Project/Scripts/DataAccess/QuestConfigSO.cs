@@ -1,15 +1,18 @@
-using System.Collections.Generic;
+using System;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace OnlyFarms.DataAccess
 {
     [CreateAssetMenu(fileName = "QuestConfig", menuName = "Configs/Quests/QuestConfig", order = 0)]
     public class QuestConfigSO : ScriptableObject, IQuestRepository
     {
-        [SerializeField] private List<DayConfigSO> _dayConfigList;
+        [FormerlySerializedAs("_dayConfigList")] [SerializeField]
+        private DayConfigSO[] _dayConfigArray;
 
-        //TODO: Implement
         public DayConfigSO GetDayConfig(string dayId) =>
-            _dayConfigList[0];
+            _dayConfigArray.FirstOrDefault(d => d.GetDayId() == dayId)
+            ?? throw new ArgumentException($"DayConfig not found: {dayId}");
     }
 }

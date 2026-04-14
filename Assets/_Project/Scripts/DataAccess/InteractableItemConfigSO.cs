@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace OnlyFarms.DataAccess
@@ -6,7 +7,7 @@ namespace OnlyFarms.DataAccess
     public class InteractableItemConfigSO : ScriptableObject
     {
         [SerializeField] private ItemType Type;
-        [SerializeField] private string OnClickScript;
+        [SerializeField] private NaniScriptReference OnClickScript;
         [SerializeField] private string ObjectiveTag;
     }
 

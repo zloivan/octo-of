@@ -22,7 +22,7 @@ namespace OnlyFarms.UI
         public event Action OnHoverExited;
 
         [SerializeField] private float _sweepDelay = 1.5f;
-        [SerializeField] private string _id;
+        [SerializeField] [HotspotId] private string _id;
         [SerializeField] private SpriteRenderer _spriteRenderer;
         [SerializeField] private Collider2D _collider;
         [SerializeField] private Material _outlineMaterial;

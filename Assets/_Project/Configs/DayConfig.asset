@@ -12,3 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 308160d24a8848bfa0a4e0c1e5b902f2, type: 3}
   m_Name: DayConfig
   m_EditorClassIdentifier: 
+  _dayId: day1
+  _questsArray: []
+  _naniScriptReference:
+    scriptName: Test_Continue
+    labelName: secret_2
