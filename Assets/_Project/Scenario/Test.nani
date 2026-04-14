@@ -2,7 +2,7 @@
 Narrator: "До фри рума."
 
 ; Начало дня — активируем квесты и переходим во free roam
-@activateDayQuests day:day1
+@activateDayQuests day1
 @exitNarrative front_porch
 
 ; По завершению мини-игры

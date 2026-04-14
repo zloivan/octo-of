@@ -7,6 +7,7 @@ namespace OnlyFarms.Infrastructure.Commands
     public class ActivateDayQuestCommand : Command
     {
         [RequiredParameter]
+        [ParameterAlias(NamelessParameterAlias)]
         public StringParameter Day;
 
         public override UniTask Execute(AsyncToken token = default)
