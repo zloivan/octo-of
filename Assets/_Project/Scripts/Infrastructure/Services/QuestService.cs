@@ -48,7 +48,7 @@ namespace OnlyFarms.Infrastructure.Services
             return UniTask.CompletedTask;
         }
 
-        public bool IsQuestCompleted(string questId)
+        public bool IsQuestCompleted(QuestDefinition questId)
         {
             OFLogger.Log("Is Quest Completed Called...");
             

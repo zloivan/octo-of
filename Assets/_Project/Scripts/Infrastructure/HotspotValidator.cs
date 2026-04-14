@@ -1,4 +1,3 @@
-using System;
 using OnlyFarms.Infrastructure;
 
 namespace OnlyFarms.Domain.Hotspots
@@ -17,11 +16,11 @@ namespace OnlyFarms.Domain.Hotspots
                 case ActivationCondition.Always:
                     return true;
                 case ActivationCondition.RequiresQuestId:
-                    return _questService?.IsQuestCompleted(hotspotData.ConditionValue) ?? true;
+                    return _questService?.IsQuestCompleted(hotspotData.QuestDefinition) ?? true;
                 case ActivationCondition.RequiresFlag:
-                    return false; // TODO: custom flag system
+                    return false;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    return true;
             }
         }
     }

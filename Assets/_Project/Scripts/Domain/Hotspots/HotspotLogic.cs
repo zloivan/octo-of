@@ -35,18 +35,6 @@ namespace OnlyFarms.Domain.Hotspots
         public string[] GetConsumedHotspotIds() =>
             _consumedHotspotIds.ToArray();
 
-        public string[] GetTransitionTargets(string hotspotId)
-        {
-            var available = _allHotspots
-                .Where(h => h.LocationId == hotspotId
-                            && h.Type == HotspotType.Transition
-                            && !string.IsNullOrEmpty(h.TargetLocationId))
-                .Select(h => h.TargetLocationId)
-                .ToArray();
-
-            return available;
-        }
-
         public HotspotData[] GetAvailableHotspots(string locationId)
         {
             var available = _allHotspots

@@ -7,7 +7,7 @@ namespace OnlyFarms.Infrastructure
 {
     public interface IQuestStatusSource
     {
-        bool IsQuestCompleted(string quest);
+        bool IsQuestCompleted(QuestDefinition quest);
         IReadOnlyList<QuestInstance> GetVisibleQuests();
 
         event Action<QuestInstance> OnQuestAdded; 

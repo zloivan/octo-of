@@ -9,9 +9,10 @@ namespace OnlyFarms.Domain.Hotspots
         public readonly string TargetLocationId;
         public readonly string LocationId;
         public readonly string Label;
+        public readonly QuestDefinition QuestDefinition;
 
         public HotspotData(string id, HotspotType type, ActivationCondition condition, string conditionValue,
-            string targetLocationId, string locationId, string label)
+            string targetLocationId, string locationId, string label, QuestDefinition questDefinition)
         {
             Id = id;
             Type = type;
@@ -20,6 +21,7 @@ namespace OnlyFarms.Domain.Hotspots
             TargetLocationId = targetLocationId;
             LocationId = locationId;
             Label = label;
+            QuestDefinition = questDefinition;
         }
 
         public override string ToString() =>
