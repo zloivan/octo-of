@@ -218,12 +218,16 @@ public interface IStatefulService<TState> : IEngineService
 
 ## 8. Аудио
 
-Игровые сервисы не вызывают `IAudioManager` напрямую. Они файрят доменные события. `SoundManager` — единственная точка связи событий со звуком.
+Игровые сервисы не вызывают `IAudioManager` напрямую. Они файрят доменные события. Sound observer'ы — единственная точка связи событий со звуком. Каждая система имеет свой observer; все читают один `GameSoundConfigSO` через `GameConfig`.
 
 ```
 LocationService.OnNavigatedForward  ──┐
-LocationService.OnNavigatedBack     ──┤  SoundManager  →  IAudioManager
+LocationService.OnNavigatedBack     ──┤  LocationSoundObserver  →  IAudioManager
 LocationService.OnItemPickedUp      ──┘
+
+QuestService.OnQuestObjectiveTicked ──┐
+QuestService.OnQuestCompleted       ──┤  QuestSoundObserver     →  IAudioManager
+QuestService.OnAllQuestsCompleted   ──┘
 ```
 
 Исключение: `@sfx` в `.nani` скриптах — допустимо.
@@ -250,5 +254,5 @@ Cysharp UniTask удалён. Только Naninovel UniTask / AsyncToken.
 - Бизнес-логика в `.nani` скриптах — только повествование
 - Нарративные скрипты не знают о квестах и точках возврата
 - `async void` — только `async UniTask` или `event Func<UniTask>`
-- `IAudioManager` напрямую из игровых сервисов — только через `SoundManager`
+- `IAudioManager` напрямую из игровых сервисов — только через sound observer'ы
 - `IEngineService` для plain C# вспомогательных классов — только для сервисов с lifecycle

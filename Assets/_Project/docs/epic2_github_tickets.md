@@ -953,6 +953,8 @@ public class QuestServiceState
 
 #### Описание
 
+**Предварительный рефактор:** переименовать `SoundManager` → `LocationSoundObserver` (файл `SoundManager.cs` → `LocationSoundObserver.cs`). Класс не меняется — только имя, чтобы отразить реальную ответственность.
+
 Три observer-класса: репортёр прогресса, мост от LocationService и звуковой observer.
 
 ---
@@ -1060,6 +1062,7 @@ public class QuestSoundObserver : IEngineService
 ---
 
 #### Acceptance Criteria
+- [ ] `SoundManager.cs` переименован в `LocationSoundObserver.cs`, класс переименован в `LocationSoundObserver`.
 - [ ] Посещение локации автоматически репортит `eventId` = `locationId` в `QuestProgressService`.
 - [ ] Подбор предмета автоматически репортит `eventId` = `itemId`.
 - [ ] `QuestProgressObserver` подписывается при `InitializeService` и отписывается при `DestroyService`.

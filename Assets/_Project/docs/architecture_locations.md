@@ -130,7 +130,7 @@ LocationConfigSO : ILocationRepository, IHotspotRepository
 ### Поток GoBack
 
 1. `LocationService.GoBack(ct)` → `_locationLogic.GoBack()` → `RenderLocation(targetId)`
-2. `OnNavigatedBack?.Invoke()` → `SoundManager` воспроизводит SFX
+2. `OnNavigatedBack?.Invoke()` → `LocationSoundObserver` воспроизводит SFX
 
 `GoBack` вызывает `RenderLocation` напрямую — не `Enter`, чтобы не трогать стек истории.
 
