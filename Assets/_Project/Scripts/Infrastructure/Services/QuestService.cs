@@ -10,7 +10,7 @@ using UnityEngine;
 namespace OnlyFarms.Infrastructure.Services
 {
     [InitializeAtRuntime]
-    public class QuestService : IStatefulService<GameStateMap>, IQuestStatusSource
+    public class QuestService : IStatefulService<GameStateMap>, IQuestStatusSource, IQuestProgressReporter
     {
         public event Action<QuestInstance> OnQuestAdded;
         public event Action<QuestInstance, QuestObjectiveInstance> OnQuestObjectiveTicked;
@@ -42,7 +42,7 @@ namespace OnlyFarms.Infrastructure.Services
             }
         }
 
-        internal void ReportEventInternal(string eventId)
+        public void ReportEvent(string eventId)
         {
             if (_session == null)
                 return;
@@ -71,11 +71,11 @@ namespace OnlyFarms.Infrastructure.Services
         {
             _session = null;
             _activeDayId = null;
-            OFLogger.Log("<color=yellow>QuestService reset</color>");
+            OFLogger.Log("<color=yellow>Reset/color>");
         }
 
         public void DestroyService() =>
-            OFLogger.Log("<color=red>QuestService destroyed");
+            OFLogger.Log("<color=red>Destroyed");
 
         public void SaveServiceState(GameStateMap stateMap)
         {
@@ -87,7 +87,7 @@ namespace OnlyFarms.Infrastructure.Services
                 Snapshot = _session.GetSnapshot(),
                 DayId = _activeDayId,
             });
-            
+
             OFLogger.Log("QuestService state saved");
         }
 
@@ -99,10 +99,10 @@ namespace OnlyFarms.Infrastructure.Services
                 OFLogger.LogWarning("Could not load state.");
                 return UniTask.CompletedTask;
             }
-            
+
             ActivateDaySession(state.DayId);
             _session.LoadSnapshot(state.Snapshot);
-            
+
             OFLogger.Log("QuestService state loaded");
 
             return UniTask.CompletedTask;
@@ -128,7 +128,7 @@ namespace OnlyFarms.Infrastructure.Services
         {
             var result = _session?.GetVisibleQuests() ?? Array.Empty<QuestInstance>();
 
-           // OFLogger.Log($"Visible Quests Count: {result.Count}");
+            // OFLogger.Log($"Visible Quests Count: {result.Count}");
             return result;
         }
 

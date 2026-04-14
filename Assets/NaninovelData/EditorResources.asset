@@ -205,3 +205,12 @@ MonoBehaviour:
     - name: click_movement_forward
       pathPrefix: Audio
       guid: a1ab1903fe7a14dbaa1b146678019b92
+    - name: quest_completed
+      pathPrefix: Audio
+      guid: fb0e93df189714b6fa449e4bd9ba5018
+    - name: quest_crossed
+      pathPrefix: Audio
+      guid: 87b2aac6115a7486d92427f2d3c81e7d
+    - name: quest_ticked
+      pathPrefix: Audio
+      guid: b4d1cde246f594f3287fe6776743e9a3

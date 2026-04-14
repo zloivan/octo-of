@@ -15,7 +15,7 @@ namespace OnlyFarms.DataAccess
         public QuestDefinition[] GetQuestsOfDay(string dayId) =>
             GetDayConfig(dayId).GetDayQuests();
 
-        private DayConfigSO GetDayConfig(string dayId) =>
+        public DayConfigSO GetDayConfig(string dayId) =>
             _dayConfigArray.FirstOrDefault(d => d.GetDayId() == dayId)
             ?? throw new ArgumentException($"DayConfig not found: {dayId}");
     }

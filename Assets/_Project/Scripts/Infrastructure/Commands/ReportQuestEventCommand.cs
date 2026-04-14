@@ -12,7 +12,7 @@ namespace OnlyFarms.Infrastructure.Commands
         public override UniTask Execute(AsyncToken token = default)
         {
             
-            Engine.GetService<QuestProgressService>()?.ReportEvent(Id);
+            Engine.GetService<QuestService>()?.ReportEvent(Id);
             return UniTask.CompletedTask;
         }
     }

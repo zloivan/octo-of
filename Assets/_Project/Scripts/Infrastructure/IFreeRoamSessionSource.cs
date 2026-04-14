@@ -23,4 +23,22 @@ namespace OnlyFarms.Infrastructure
         public string GetReturnLabel() =>
             _returnLabel;
     }
+    
+    public class DaySessionSource : IFreeRoamSessionSource
+    {
+        private readonly string _returnScript;
+        private readonly string _returnLabel;
+
+        public DaySessionSource(string returnScript, string returnLabel)
+        {
+            _returnScript = returnScript;
+            _returnLabel = returnLabel;
+        }
+
+        public string GetReturnScript() =>
+            _returnScript;
+
+        public string GetReturnLabel() =>
+            _returnLabel;
+    }
 }

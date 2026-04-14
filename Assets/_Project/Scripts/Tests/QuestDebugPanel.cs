@@ -174,7 +174,7 @@ namespace OnlyFarms._Project.Scripts.Tests.Editor
 
             EditorGUI.BeginDisabledGroup(string.IsNullOrWhiteSpace(_eventId));
             if (GUILayout.Button("Report Event"))
-                GetQuestService()?.ReportEventInternal(_eventId);
+                GetQuestService()?.ReportEvent(_eventId);
             EditorGUI.EndDisabledGroup();
         }
 

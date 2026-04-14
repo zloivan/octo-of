@@ -70,6 +70,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 87b2aac6115a7486d92427f2d3c81e7d
+    m_Address: Assets/_Project/Audio/quest_crossed.wav
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8a41a503de5e74837a556c044e395d50
     m_Address: Assets/_Project/Prefabs/Hotspots/hotspots_paddock.prefab
     m_ReadOnly: 0
@@ -105,6 +110,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b4d1cde246f594f3287fe6776743e9a3
+    m_Address: Assets/_Project/Audio/quest_ticked.wav
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b5d273d79e5f3479a96abb96bc74a0a0
     m_Address: Assets/_Project/Art/Static/Tests/Kitchen_Night.mp4
     m_ReadOnly: 0
@@ -137,6 +147,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f924f09f2107943599828fc498b1627b
     m_Address: Assets/_Project/Audio/click_object.wav
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fb0e93df189714b6fa449e4bd9ba5018
+    m_Address: Assets/_Project/Audio/quest_completed.wav
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

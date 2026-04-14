@@ -11,22 +11,22 @@ namespace OnlyFarms.Infrastructure.Sound
     {
         private readonly QuestService _questService;
         private readonly IAudioManager _audioManager;
-        private readonly GameSoundConfigSO _soundConfig;
+        private readonly GameSoundConfigSO _gameConfig;
 
-        public QuestSoundObserver(QuestService questService, IAudioManager audioManager, GameSoundConfigSO soundConfig)
+        public QuestSoundObserver(QuestService questService, IAudioManager audioManager, GameConfig gameConfig)
         {
             _questService = questService;
             _audioManager = audioManager;
-            _soundConfig = soundConfig;
+            _gameConfig = gameConfig.SoundConfig;
         }
 
         public UniTask InitializeService()
         {
-            OFLogger.Log("<color=blue>Initilized...</color>");
-
             _questService.OnQuestObjectiveTicked += QuestService_OnQuestObjectiveTicked;
             _questService.OnQuestCompleted += QuestService_OnQuestCompleted;
             _questService.OnAllQuestsCompleted += QuestService_OnAllQuestsCompleted;
+            
+            OFLogger.Log("<color=blue>Initialized...</color>");
             return UniTask.CompletedTask;
         }
 
@@ -35,6 +35,8 @@ namespace OnlyFarms.Infrastructure.Sound
             _questService.OnQuestObjectiveTicked -= QuestService_OnQuestObjectiveTicked;
             _questService.OnQuestCompleted -= QuestService_OnQuestCompleted;
             _questService.OnAllQuestsCompleted -= QuestService_OnAllQuestsCompleted;
+            
+            OFLogger.Log("<color=red>Destroyed...</color>");
         }
 
         public void ResetService()
@@ -43,15 +45,15 @@ namespace OnlyFarms.Infrastructure.Sound
 
         private UniTask QuestService_OnAllQuestsCompleted()
         {
-            _audioManager.PlaySfx(_soundConfig.QuestTicked);
+            _audioManager.PlaySfx(_gameConfig.QuestCompleted);
 
             return UniTask.CompletedTask;
         }
 
         private void QuestService_OnQuestCompleted(QuestInstance obj) =>
-            _audioManager.PlaySfx(_soundConfig.QuestCrossed);
+            _audioManager.PlaySfx(_gameConfig.QuestCrossed);
 
         private void QuestService_OnQuestObjectiveTicked(QuestInstance arg1, QuestObjectiveInstance arg2) =>
-            _audioManager.PlaySfx(_soundConfig.QuestCompleted);
+            _audioManager.PlaySfx(_gameConfig.QuestTicked);
     }
 }

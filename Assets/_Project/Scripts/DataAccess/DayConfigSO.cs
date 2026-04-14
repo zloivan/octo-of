@@ -36,5 +36,8 @@ namespace OnlyFarms.DataAccess
 
         public QuestDefinition[] GetDayQuests() =>
             _questsArray.Select(qd => qd.ToDefinition()).ToArray();
+        
+        public string GetReturnScript() => _naniScriptReference.scriptName;
+        public string GetReturnLabel()  => _naniScriptReference.labelName;
     }
 }

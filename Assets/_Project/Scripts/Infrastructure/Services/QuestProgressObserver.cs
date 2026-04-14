@@ -10,7 +10,7 @@ namespace OnlyFarms.Infrastructure.Services
         private readonly LocationService _locationService;
         private readonly IQuestProgressReporter _progressReporter;
 
-        public QuestProgressObserver(LocationService locationService, QuestProgressService progressReporter)
+        public QuestProgressObserver(LocationService locationService, QuestService progressReporter)
         {
             _locationService = locationService;
             _progressReporter = progressReporter;
