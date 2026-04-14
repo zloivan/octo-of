@@ -813,7 +813,7 @@ Domain содержит только `IHotspotValidator` (интерфейс). �
 
 #### Описание
 
-Заменить stub-реализацию на полную. `QuestService` управляет `QuestSession`, файрит события и реализует `IStatefulService<GameStateMap>`.
+Заменить stub-реализацию на полную. `QuestService` управляет `QuestSession`, файрит события и реализует `IStatefulService<GameStateMap>`. Методы принимают строки вместо SO-ссылок, как в `LocationService`. `IQuestRepository` возвращает доменные типы. `DayId` перенесён из `QuestSessionSnapshot` в `QuestServiceState`.
 
 ---
 
@@ -829,17 +829,17 @@ public class QuestService : IStatefulService<GameStateMap>, IQuestStatusSource
 
     private readonly IQuestRepository _questRepository;
     private QuestSession _session;
-    private DayConfigSO  _activeConfig;
+    private string _activeDayId;
 
     public QuestService(GameConfig gameConfig)
     {
         _questRepository = gameConfig.QuestConfig;
     }
 
-    public void ActivateDaySession(DayConfigSO dayConfig)
+    public void ActivateDaySession(string dayId)
     {
-        _activeConfig = dayConfig;
-        var definitions = dayConfig.Quests.Select(q => q.ToDefinition());
+        _activeDayId = dayId;
+        var definitions = _questRepository.GetQuestsOfDay(dayId);
         _session = new QuestSession(definitions);
 
         foreach (var quest in _session.VisibleQuests)
@@ -847,11 +847,11 @@ public class QuestService : IStatefulService<GameStateMap>, IQuestStatusSource
     }
 
     // IQuestStatusSource
-    public bool IsQuestCompleted(QuestDefinitionSO quest)
+    public bool IsQuestCompleted(string questId)
     {
         if (_session == null) return false;
         return _session.AllQuests
-            .FirstOrDefault(q => q.Definition.DisplayText == quest.DisplayText)
+            .FirstOrDefault(q => q.Definition.Id == questId)
             ?.IsCompleted ?? false;
     }
 
@@ -896,43 +896,51 @@ public class QuestService : IStatefulService<GameStateMap>, IQuestStatusSource
     // IStatefulService
     public UniTask InitializeService()  => UniTask.CompletedTask;
     public void DestroyService()        { }
-    public void ResetService()          { _session = null; _activeConfig = null; }
+    public void ResetService()          { _session = null; _activeDayId = null; }
 
     public void SaveServiceState(GameStateMap stateMap)
     {
-        if (_session == null || _activeConfig == null) return;
-        var snapshot = _session.GetSnapshot();
-        snapshot.DayId = _activeConfig.DayId;
-        stateMap.SetState(new QuestServiceState { Snapshot = snapshot });
+        if (_session == null || string.IsNullOrEmpty(_activeDayId)) return;
+        stateMap.SetState(new QuestServiceState
+        {
+            Snapshot = _session.GetSnapshot(),
+            DayId = _activeDayId,
+        });
     }
 
     public UniTask LoadServiceState(GameStateMap stateMap)
     {
         var state = stateMap.GetState<QuestServiceState>();
         if (state?.Snapshot == null) return UniTask.CompletedTask;
-
-        var config = _questRepository.GetDayConfig(state.Snapshot.DayId);
-        ActivateDaySession(config);
+        ActivateDaySession(state.DayId);
         _session.LoadSnapshot(state.Snapshot);
         return UniTask.CompletedTask;
     }
+}
+
+public interface IQuestRepository
+{
+    QuestDefinition[] GetQuestsOfDay(string dayId);
 }
 
 [Serializable]
 public class QuestServiceState
 {
     public QuestSessionSnapshot Snapshot;
+    public string DayId;
 }
 ```
+
+**Примечание:** Реализация отличается от изначального тикета: методы принимают строки вместо SO-ссылок, аналогично LocationService. IQuestRepository возвращает доменные типы. DayId перенесён из QuestSessionSnapshot в QuestServiceState.
 
 ---
 
 #### Acceptance Criteria
-- [ ] `ActivateDaySession` файрит `OnQuestAdded` для всех изначально видимых квестов.
-- [ ] `ReportEventInternal` файрит `OnObjectiveTicked`, затем `OnQuestCompleted` если квест завершён.
-- [ ] `OnAllQuestsCompleted` файрится после завершения последнего квеста.
-- [ ] При sequential-квестах: после завершения первого `OnQuestAdded` файрится для второго.
-- [ ] `SaveServiceState` / `LoadServiceState` восстанавливают сессию корректно.
+- [x] `ActivateDaySession` файрит `OnQuestAdded` для всех изначально видимых квестов.
+- [x] `ReportEventInternal` файрит `OnObjectiveTicked`, затем `OnQuestCompleted` если квест завершён.
+- [x] `OnAllQuestsCompleted` файрится после завершения последнего квеста.
+- [x] При sequential-квестах: после завершения первого `OnQuestAdded` файрится для второго.
+- [x] `SaveServiceState` / `LoadServiceState` восстанавливают сессию корректно.
 
 ---
 

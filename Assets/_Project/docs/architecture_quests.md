@@ -57,9 +57,9 @@ public class QuestObjectiveDefinition
 ```csharp
 public class QuestDefinition
 {
-    public string DisplayText                     { get; }
-    public QuestObjectiveDefinition[] Objectives  { get; }
-    public bool IsSequential                      { get; }
+    public string GetDisplayName()                 { ... }
+    public QuestObjectiveDefinition[] GetObjectives()  { ... }
+    public bool IsSequential()                    { ... }
     // IsSequential: следующий квест в QuestSession становится видимым
     // только после завершения предыдущего.
     // Порядок внутри одного квеста всегда определяется порядком Objectives[].
@@ -80,9 +80,9 @@ public class QuestDefinitionSO : ScriptableObject
 ```csharp
 public class QuestObjectiveInstance
 {
-    public QuestObjectiveDefinition Definition { get; }
-    public int CurrentCount  { get; private set; }
-    public bool IsCompleted  => CurrentCount >= Definition.RequiredCount;
+    public QuestObjectiveDefinition GetDefinition() { ... }
+    public int GetCurrentCount()  { ... }
+    public bool IsCompleted()  { ... }
 
     public QuestObjectiveInstance(QuestObjectiveDefinition definition)
     {
@@ -92,8 +92,8 @@ public class QuestObjectiveInstance
     // Возвращает true если прогресс был засчитан
     public bool TryReport(string eventId)
     {
-        if (IsCompleted || eventId != Definition.EventId) return false;
-        CurrentCount++;
+        if (IsCompleted() || eventId != GetDefinition().EventId) return false;
+        // Инкрементирует internal счётчик
         return true;
     }
 }
@@ -104,9 +104,9 @@ public class QuestObjectiveInstance
 ```csharp
 public class QuestInstance
 {
-    public QuestDefinition Definition     { get; }
-    public QuestObjectiveInstance[] Objectives { get; }
-    public bool IsCompleted => Objectives.All(o => o.IsCompleted);
+    public QuestDefinition GetDefinition()     { ... }
+    public QuestObjectiveInstance[] GetObjectives() { ... }
+    public bool IsCompleted() { ... }
 
     // TryReport форвардит во все невыполненные объективы,
     // возвращает тот что был прогрессирован (или null)
@@ -161,7 +161,6 @@ public class QuestSession
 [Serializable]
 public class QuestSessionSnapshot
 {
-    public string DayId;
     public QuestObjectiveProgress[] ObjectiveProgress; // CurrentCount per objective
     public int VisibleCount;
 }
@@ -176,6 +175,19 @@ public class QuestObjectiveProgress
 ```
 
 Квесты идентифицируются по индексу в `DayConfigSO.Quests[]` — не по SO-ссылке.
+
+**Важно (Ticket 2.4.1):** `DayId` больше НЕ хранится в `QuestSessionSnapshot`. Вместо этого используется `QuestServiceState`:
+
+```csharp
+[Serializable]
+public class QuestServiceState
+{
+    public QuestSessionSnapshot Snapshot;
+    public string DayId;
+}
+```
+
+Это разделение необходимо потому что `QuestSessionSnapshot` используется как для сохранения, так и для внутреннего state, но `DayId` требуется только на уровне сервиса для разрешения квестов при загрузке.
 
 ---
 
@@ -224,14 +236,17 @@ public class QuestConfigSO : Configuration, IQuestRepository
 {
     public DayConfigSO[] Days;
 
-    public DayConfigSO GetDayConfig(string dayId)
-        => Days.FirstOrDefault(d => d.DayId == dayId)
-           ?? throw new ArgumentException($"DayConfig not found: {dayId}");
+    public QuestDefinition[] GetQuestsOfDay(string dayId)
+    {
+        var dayConfig = Days.FirstOrDefault(d => d.DayId == dayId)
+            ?? throw new ArgumentException($"DayConfig not found: {dayId}");
+        return dayConfig.Quests.Select(q => q.ToDefinition()).ToArray();
+    }
 }
 
 public interface IQuestRepository
 {
-    DayConfigSO GetDayConfig(string dayId);
+    QuestDefinition[] GetQuestsOfDay(string dayId);
 }
 ```
 
@@ -244,7 +259,7 @@ public QuestConfigSO QuestConfig;
 
 ## 4. Сервисы
 
-### QuestService
+### QuestService (изменено в Ticket 2.4.1)
 
 ```csharp
 [InitializeAtRuntime]
@@ -253,13 +268,14 @@ public class QuestService : IStatefulService<GameStateMap>, IQuestStatusSource
     public QuestService(GameConfig gameConfig) { }
 
     // Вызывается из DaySessionOrchestrator (не из команды напрямую)
-    public void ActivateDaySession(DayConfigSO dayConfig);
+    // Разрешает квесты по dayId самостоятельно через _questRepository
+    public void ActivateDaySession(string dayId);
 
     // IQuestStatusSource
     public event Func<UniTask> OnAllQuestsCompleted;
 
     // Query — используется QuestPanelViewModel и HotspotValidator
-    public bool IsQuestCompleted(QuestDefinitionSO quest);
+    public bool IsQuestCompleted(string questId);
     public IReadOnlyList<QuestInstance> GetVisibleQuests();
 
     // Доменные события (sync) — слушают QuestPanelViewModel и QuestSoundObserver
@@ -275,6 +291,10 @@ public class QuestService : IStatefulService<GameStateMap>, IQuestStatusSource
     public UniTask LoadServiceState(GameStateMap stateMap);
 }
 ```
+
+**Изменения:**
+- `ActivateDaySession(string dayId)` — теперь берёт `dayId` и разрешает квесты сам через `_questRepository.GetQuestsOfDay(dayId)` (как `LocationService`)
+- `IsQuestCompleted(string questId)` — берёт ID квеста, не SO
 
 `OnAllQuestsCompleted` — `event Func<UniTask>` (async-chain для GameFlowService).
 Остальные события — sync `event Action<T>` (UI и звук не требуют async).
@@ -386,12 +406,17 @@ public class DaySessionOrchestrator : IEngineService
 
     public void StartDay(string dayId)
     {
-        var config = _gameConfig.QuestConfig.GetDayConfig(dayId);
-        _questService.ActivateDaySession(config);
+        var config = _gameConfig.QuestConfig.GetDayConfig(dayId);  // Разрешает DayConfigSO здесь
+        _questService.ActivateDaySession(dayId);                   // Передаёт string, не конфиг
         _gameFlowService.SetSessionSource(new DaySessionSource(config));
     }
 }
 ```
+
+**Изменения (Ticket 2.4.1/2.4.3):**
+- `ActivateDaySession(dayId)` теперь берёт string, не `DayConfigSO`
+- `DaySessionOrchestrator` по-прежнему разрешает конфиг сам (для `DaySessionSource`)
+- `QuestService` разрешает квесты самостоятельно через `IQuestRepository.GetQuestsOfDay(dayId)`
 
 ### DaySessionSource
 
@@ -654,7 +679,8 @@ public class HotspotValidator : IHotspotValidator
 ```
 @activateDayQuests day:day1
   → DaySessionOrchestrator.StartDay("day1")
-      → QuestService.ActivateDaySession(dayConfig)      — создаёт QuestSession
+      → var config = _gameConfig.QuestConfig.GetDayConfig("day1")
+      → QuestService.ActivateDaySession("day1")         — разрешает квесты сам через GetQuestsOfDay()
       → GameFlowService.SetSessionSource(DaySessionSource)
 
 @exitNarrative backyard returnScript:day_01 returnLabel:after_roam
@@ -683,10 +709,14 @@ public class HotspotValidator : IHotspotValidator
 
 ---
 
-## 11. Save/Load
+## 11. Save/Load (изменено в Ticket 2.4.1)
 
-`QuestService.SaveServiceState` сохраняет `QuestSessionSnapshot` в `GameStateMap`.
-`QuestService.LoadServiceState` восстанавливает `QuestSession` из снапшота.
+`QuestService.SaveServiceState` сохраняет `QuestServiceState` (который содержит `Snapshot` + `DayId`) в `GameStateMap`.
+`QuestService.LoadServiceState` восстанавливает `QuestSession` из `QuestServiceState`:
+1. Вызывает `ActivateDaySession(state.DayId)` — разрешает квесты
+2. Вызывает `_session.LoadSnapshot(state.Snapshot)` — восстанавливает прогресс
+
+`QuestSessionSnapshot` больше не содержит `DayId` — это упрощает контракт между сессией и сервисом.
 
 `QuestPanelUI.OnEnable` проходит по `QuestPanelViewModel.ActiveQuests` и восстанавливает UI —
 это покрывает сценарий загрузки сохранения во время free roam.
