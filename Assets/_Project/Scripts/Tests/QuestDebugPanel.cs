@@ -5,6 +5,7 @@ using Naninovel;
 using OnlyFarms.DataAccess;
 using OnlyFarms.Domain;
 using OnlyFarms.Infrastructure.Services;
+using OnlyFarms.Presentation;
 using UnityEditor;
 using UnityEngine;
 
@@ -72,6 +73,8 @@ namespace OnlyFarms._Project.Scripts.Tests.Editor
             DrawSeparator();
             DrawQuestStateSection();
             DrawSeparator();
+            DrawViewModelSection();
+            DrawSeparator();
             DrawReportSection();
             DrawSeparator();
             DrawSaveLoadSection();
@@ -106,11 +109,11 @@ namespace OnlyFarms._Project.Scripts.Tests.Editor
         }
 
         // ═══════════════════════════════════
-        // Текущее состояние квестов
+        // Текущее состояние квестов (QuestService)
         // ═══════════════════════════════════
         private void DrawQuestStateSection()
         {
-            EditorGUILayout.LabelField("QUEST STATE", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("QUEST STATE (QuestService)", EditorStyles.boldLabel);
 
             var svc = GetQuestService();
             var visible = svc?.GetVisibleQuests();
@@ -148,7 +151,6 @@ namespace OnlyFarms._Project.Scripts.Tests.Editor
                         EditorStyles.miniLabel);
                 }
 
-                // Все objectives под квестом (сворачиваемые)
                 foreach (var obj in quest.GetObjectives())
                 {
                     var done = obj.IsCompleted() ? "☑" : "☐";
@@ -156,6 +158,47 @@ namespace OnlyFarms._Project.Scripts.Tests.Editor
                         $"         {done} [{obj.GetCurrentCount()}/{obj.GetDefinition().RequiredCount}] {obj.GetDefinition().EventId}",
                         EditorStyles.miniLabel);
                 }
+            }
+        }
+
+        // ═══════════════════════════════════
+        // AC#1 + AC#2 + AC#3 + AC#5 — QuestPanelViewModel
+        // ═══════════════════════════════════
+        private void DrawViewModelSection()
+        {
+            EditorGUILayout.LabelField("VM STATE (QuestPanelViewModel)", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "AC#1: сервис должен резолвиться.\n" +
+                "AC#3: после завершения квеста он должен пропасть из этого списка.\n" +
+                "AC#5: после Load список должен содержать только незавершённые квесты.",
+                MessageType.None);
+
+            var vm = GetPanelViewModel();
+
+            if (vm == null)
+            {
+                var style = new GUIStyle(EditorStyles.helpBox);
+                style.normal.textColor = Color.red;
+                EditorGUILayout.LabelField("  ❌ Engine.GetService<QuestPanelViewModel>() вернул null", EditorStyles.miniLabel);
+                return;
+            }
+
+            EditorGUILayout.LabelField("  ✅ Engine.GetService<QuestPanelViewModel>() OK", EditorStyles.miniLabel);
+
+            var active = vm.GetActiveQuests();
+
+            if (active.Count == 0)
+            {
+                EditorGUILayout.LabelField("  (ActiveQuests пуст)", EditorStyles.miniLabel);
+                return;
+            }
+
+            foreach (var entry in active)
+            {
+                var icon = entry.GetIsCompleted() ? "✅" : "⏳";
+                EditorGUILayout.LabelField(
+                    $"  {icon} {entry.GetDisplayText()}  |  {entry.GetObjectiveText()}  [{entry.GetCurrentCount()}/{entry.GetRequiredCount()}]",
+                    EditorStyles.miniLabel);
             }
         }
 
@@ -188,7 +231,7 @@ namespace OnlyFarms._Project.Scripts.Tests.Editor
                 "1. Активируй сессию, отрепортируй несколько событий.\n" +
                 "2. Quick Save.\n" +
                 "3. Reset → Quick Load.\n" +
-                "4. Quest State должен восстановить тот же прогресс.",
+                "4. VM STATE должен показывать только незавершённые квесты.",
                 MessageType.None);
 
             EditorGUILayout.BeginHorizontal();
@@ -244,6 +287,14 @@ namespace OnlyFarms._Project.Scripts.Tests.Editor
             svc.OnQuestObjectiveTicked += OnObjectiveTicked;
             svc.OnQuestCompleted       += OnQuestCompleted;
             svc.OnAllQuestsCompleted   += OnAllQuestsCompleted;
+
+            var vm = GetPanelViewModel();
+            if (vm != null)
+            {
+                vm.OnSessionActivated += OnVmSessionActivated;
+                vm.OnQuestRemoved     += OnVmQuestRemoved;
+            }
+
             _subscribed = true;
         }
 
@@ -256,14 +307,23 @@ namespace OnlyFarms._Project.Scripts.Tests.Editor
             svc.OnQuestObjectiveTicked -= OnObjectiveTicked;
             svc.OnQuestCompleted       -= OnQuestCompleted;
             svc.OnAllQuestsCompleted   -= OnAllQuestsCompleted;
+
+            var vm = GetPanelViewModel();
+            if (vm != null)
+            {
+                vm.OnSessionActivated -= OnVmSessionActivated;
+                vm.OnQuestRemoved     -= OnVmQuestRemoved;
+            }
+
             _subscribed = false;
         }
 
+        // QuestService events
         private void OnQuestAdded(QuestInstance q)
         {
             var obj = q.GetCurrentObjective();
             var text = obj?.GetDefinition().DisplayText ?? "(no objective)";
-            _log.Add($"[OnQuestAdded] {q.GetDefinition().GetDisplayName()} → \"{text}\"");
+            _log.Add($"[QS.OnQuestAdded] {q.GetDefinition().GetDisplayName()} → \"{text}\"");
             Repaint();
         }
 
@@ -274,21 +334,34 @@ namespace OnlyFarms._Project.Scripts.Tests.Editor
             var next     = q.GetCurrentObjective();
             var nextText = next != null ? $" | next: \"{next.GetDefinition().DisplayText}\"" : "";
 
-            _log.Add($"[OnObjectiveTicked] {q.GetDefinition().GetDisplayName()} [{count}/{required}]{nextText}");
+            _log.Add($"[QS.OnObjectiveTicked] {q.GetDefinition().GetDisplayName()} [{count}/{required}]{nextText}");
             Repaint();
         }
 
         private void OnQuestCompleted(QuestInstance q)
         {
-            _log.Add($"[OnQuestCompleted] {q.GetDefinition().GetDisplayName()}");
+            _log.Add($"[QS.OnQuestCompleted] {q.GetDefinition().GetDisplayName()}");
             Repaint();
         }
 
         private UniTask OnAllQuestsCompleted()
         {
-            _log.Add("[OnAllQuestsCompleted] ✅");
+            _log.Add("[QS.OnAllQuestsCompleted] ✅");
             Repaint();
             return UniTask.CompletedTask;
+        }
+
+        // QuestPanelViewModel events
+        private void OnVmSessionActivated()
+        {
+            _log.Add("[VM.OnSessionActivated] ✅  ← AC#2");
+            Repaint();
+        }
+
+        private void OnVmQuestRemoved(QuestEntryViewModel vm)
+        {
+            _log.Add($"[VM.OnQuestRemoved] {vm.GetDisplayText()}  ← AC#3");
+            Repaint();
         }
 
         // ═══════════════════════════════════
@@ -310,6 +383,9 @@ namespace OnlyFarms._Project.Scripts.Tests.Editor
 
         private static QuestService GetQuestService() =>
             Engine.GetService<QuestService>();
+
+        private static QuestPanelViewModel GetPanelViewModel() =>
+            Engine.GetService<QuestPanelViewModel>();
 
         private static void DrawSeparator()
         {
