@@ -16,6 +16,7 @@ namespace OnlyFarms.Infrastructure.Services
         public event Action<QuestInstance, QuestObjectiveInstance> OnQuestObjectiveTicked;
         public event Action<QuestInstance> OnQuestCompleted;
         public event Func<UniTask> OnAllQuestsCompleted;
+        public event Action OnSessionReset;
 
         private readonly IQuestRepository _questRepository;
         private QuestSession _session;
@@ -26,6 +27,9 @@ namespace OnlyFarms.Infrastructure.Services
 
         public void ActivateDaySession(string dayId)
         {
+            if (_session != null)
+                OnSessionReset?.Invoke();
+            
             var dayQuests = _questRepository.GetQuestsOfDay(dayId);
             if (dayQuests == null || dayQuests.Length == 0)
             {

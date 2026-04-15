@@ -24,6 +24,7 @@ namespace OnlyFarms.Presentation
 
         public UniTask InitializeService()
         {
+            _questService.OnSessionReset += QuestService_OnSessionReset;
             _questService.OnQuestAdded += QuestService_OnQuestAdded;
             _questService.OnQuestObjectiveTicked += QuestService_OnQuestObjectiveTicked;
             _questService.OnQuestCompleted += QuestService_OnQuestCompleted;
@@ -35,6 +36,7 @@ namespace OnlyFarms.Presentation
 
         public void DestroyService()
         {
+            _questService.OnSessionReset -= QuestService_OnSessionReset;
             _questService.OnQuestAdded -= QuestService_OnQuestAdded;
             _questService.OnQuestObjectiveTicked -= QuestService_OnQuestObjectiveTicked;
             _questService.OnQuestCompleted -= QuestService_OnQuestCompleted;
@@ -42,6 +44,9 @@ namespace OnlyFarms.Presentation
 
             OFLogger.Log("<color=red>Destroyed</color>");
         }
+
+        private void QuestService_OnSessionReset() =>
+            ResetService();
 
         public void ResetService()
         {
@@ -66,7 +71,9 @@ namespace OnlyFarms.Presentation
             if (!_vmMap.TryGetValue(quest, out var vm))
                 return;
 
-            vm.NotifyProgress(obj);
+            var next = quest.GetCurrentObjective();
+            if (next != null)
+                vm.NotifyProgress(next);
         }
 
         private void QuestService_OnQuestCompleted(QuestInstance quest)

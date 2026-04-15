@@ -147,6 +147,9 @@ MonoBehaviour:
     - name: BackButtonUI
       pathPrefix: UI
       guid: c02767671aef74b949900b3b033c9832
+    - name: QuestPanelUI
+      pathPrefix: UI
+      guid: 2abeb631212bb418e9470f23b0808bf5
   - Id: Scripts
     Resources:
     - name: Test
