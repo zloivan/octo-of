@@ -103,6 +103,10 @@ namespace OnlyFarms.Infrastructure.Services
             ActivateDaySession(state.DayId);
             _session.LoadSnapshot(state.Snapshot);
 
+            foreach (var quest in _session.GetAllQuestsList())
+                if (quest.IsCompleted())
+                    OnQuestCompleted?.Invoke(quest);
+            
             OFLogger.Log("QuestService state loaded");
 
             return UniTask.CompletedTask;
