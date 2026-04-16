@@ -247,7 +247,60 @@ Cysharp UniTask удалён. Только Naninovel UniTask / AsyncToken.
 
 ---
 
-## 10. Что НЕ делаем
+## 10. Editor ID Helpers — стандарт проекта
+
+Любое строковое поле, значение которого должно совпадать с ID из конфига, **обязано** иметь `PropertyAttribute` + `PropertyDrawer` с dropdown.
+
+Это единственная защита от опечаток на этапе заполнения данных.
+
+### Существующие атрибуты
+
+| Атрибут | Источник | Кеш |
+|---|---|---|
+| `[LocationId]` | `LocationConfigSO.Locations[].Id` | `LocationConfigCache.LocationIds` |
+| `[HotspotId]` | `LocationConfigSO.Locations[].Hotspots[].Id` | `LocationConfigCache.HotspotIds` |
+| `[QuestEventId]` | все `QuestDefinitionSO` в проекте → `Objectives[].EventId` | `QuestConfigCache.EventIds` |
+
+### Применение
+
+```csharp
+// QuestObjectiveDefinition
+[QuestEventId] public string EventId;
+
+// HotspotEntry
+[QuestEventId] [SerializeField] private string _questEventId;
+
+// HotspotEntry — переходы
+[LocationId] [SerializeField] private string _targetLocationId;
+```
+
+### Источник правды vs. потребитель
+
+Атрибут ставится **только на поля-потребители** — те, что ссылаются на уже существующий ID.
+Поле, где ID определяется (создаётся впервые), атрибута не имеет — это и есть источник правды, свободный ввод.
+
+```
+QuestObjectiveDefinition.EventId   ← источник правды, свободный ввод, без атрибута
+                    ↓ читает QuestConfigCache
+HotspotEntry._questEventId         ← потребитель, [QuestEventId] → dropdown
+NarrativeTriggerEntry.TriggerId    ← потребитель, [QuestEventId] → dropdown
+```
+
+Аналогично для локаций: `LocationDefinition.Id` — источник, `HotspotEntry._targetLocationId` — потребитель `[LocationId]`.
+
+### Правило добавления нового атрибута
+
+При появлении нового типа ID в проекте:
+1. `XxxAttribute : PropertyAttribute` — в `Assets/_Project/Scripts/Attributes/`
+2. `XxxConfigCache` — статический кеш, читает из SO через `AssetDatabase` + `SerializedObject`
+3. `XxxDrawer : PropertyDrawer` — вызывает `ConfigIdDrawerHelper.DrawPopup()`
+4. Применить атрибут на **все** поля этого типа в проекте
+
+`ConfigIdDrawerHelper.DrawPopup` — общая точка рендеринга для всех drawer'ов. Подсвечивает отсутствующие значения красным.
+
+---
+
+## 11. Что НЕ делаем
 
 - `GameObject.Find()` / `FindObjectOfType()` в runtime
 - Синглтоны поверх DI
