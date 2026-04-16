@@ -1,4 +1,4 @@
-namespace OnlyFarms.Domain
+namespace OnlyFarms.Domain.Quests
 {
     public static class QuestEventId
     {

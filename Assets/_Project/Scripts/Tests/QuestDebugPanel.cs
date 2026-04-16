@@ -3,13 +3,13 @@
 using System.Collections.Generic;
 using Naninovel;
 using OnlyFarms.DataAccess;
-using OnlyFarms.Domain;
+using OnlyFarms.Domain.Quests;
 using OnlyFarms.Infrastructure.Services;
 using OnlyFarms.Presentation;
 using UnityEditor;
 using UnityEngine;
 
-namespace OnlyFarms._Project.Scripts.Tests.Editor
+namespace OnlyFarms.Tests
 {
     public class QuestDebugPanel : EditorWindow
     {

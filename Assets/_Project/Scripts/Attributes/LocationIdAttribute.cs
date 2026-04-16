@@ -1,2 +1,6 @@
 using UnityEngine;
-public class LocationIdAttribute : PropertyAttribute { }
+
+namespace OnlyFarms.Attributes
+{
+    public class LocationIdAttribute : PropertyAttribute { }
+}

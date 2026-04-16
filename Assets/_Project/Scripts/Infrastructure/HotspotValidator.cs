@@ -1,6 +1,6 @@
-using OnlyFarms.Infrastructure;
+using OnlyFarms.Domain.Hotspots;
 
-namespace OnlyFarms.Domain.Hotspots
+namespace OnlyFarms.Infrastructure
 {
     public class HotspotValidator : IHotspotValidator
     {

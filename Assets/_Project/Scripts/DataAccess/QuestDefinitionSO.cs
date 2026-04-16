@@ -1,6 +1,5 @@
-using System;
 using System.Collections.Generic;
-using OnlyFarms.Domain;
+using OnlyFarms.Domain.Quests;
 using OnlyFarms.Utilities;
 using UnityEngine;
 

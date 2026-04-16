@@ -1,10 +1,9 @@
 using Naninovel;
 using OnlyFarms.DataAccess;
-using OnlyFarms.Domain;
-using OnlyFarms.Infrastructure.Services;
+using OnlyFarms.Domain.Quests;
 using OnlyFarms.Utilities;
 
-namespace OnlyFarms.Infrastructure.Sound
+namespace OnlyFarms.Infrastructure.Services.Sound
 {
     [InitializeAtRuntime]
     public class QuestSoundObserver : IEngineService

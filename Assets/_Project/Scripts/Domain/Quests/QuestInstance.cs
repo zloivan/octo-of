@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace OnlyFarms.Domain
+namespace OnlyFarms.Domain.Quests
 {
     public class QuestInstance
     {

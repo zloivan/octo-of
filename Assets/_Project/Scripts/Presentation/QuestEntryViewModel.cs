@@ -1,5 +1,6 @@
 using System;
 using OnlyFarms.Domain;
+using OnlyFarms.Domain.Quests;
 
 namespace OnlyFarms.Presentation
 {

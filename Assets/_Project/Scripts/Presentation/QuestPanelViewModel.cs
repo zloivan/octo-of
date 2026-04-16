@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Naninovel;
 using OnlyFarms.Domain;
+using OnlyFarms.Domain.Quests;
 using OnlyFarms.Infrastructure.Services;
 using OnlyFarms.Utilities;
 

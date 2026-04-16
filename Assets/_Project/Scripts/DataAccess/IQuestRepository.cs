@@ -1,4 +1,4 @@
-using OnlyFarms.Domain;
+using OnlyFarms.Domain.Quests;
 
 namespace OnlyFarms.DataAccess
 {

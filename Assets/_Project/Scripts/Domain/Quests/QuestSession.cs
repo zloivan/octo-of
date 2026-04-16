@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
-namespace OnlyFarms.Domain
+namespace OnlyFarms.Domain.Quests
 {
     public class QuestSession
     {

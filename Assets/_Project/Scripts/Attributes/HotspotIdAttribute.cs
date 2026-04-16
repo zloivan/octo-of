@@ -1,3 +1,6 @@
-// Scripts/Attributes/HotspotIdAttribute.cs
 using UnityEngine;
-public class HotspotIdAttribute : PropertyAttribute { }
+
+namespace OnlyFarms.Attributes
+{
+    public class HotspotIdAttribute : PropertyAttribute { }
+}

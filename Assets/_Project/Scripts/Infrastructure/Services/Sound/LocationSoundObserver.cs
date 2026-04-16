@@ -1,8 +1,7 @@
 using Naninovel;
 using OnlyFarms.DataAccess;
-using OnlyFarms.Infrastructure.Services;
 
-namespace OnlyFarms.Infrastructure.Sound
+namespace OnlyFarms.Infrastructure.Services.Sound
 {
     [InitializeAtRuntime]
     public class LocationSoundObserver : IEngineService

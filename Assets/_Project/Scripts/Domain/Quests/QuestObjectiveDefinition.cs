@@ -1,6 +1,6 @@
 using System;
 
-namespace OnlyFarms.Domain
+namespace OnlyFarms.Domain.Quests
 {
     [Serializable]
     public class QuestObjectiveDefinition

@@ -4,6 +4,7 @@ using System.Linq;
 using Naninovel;
 using OnlyFarms.DataAccess;
 using OnlyFarms.Domain;
+using OnlyFarms.Domain.Quests;
 using OnlyFarms.Utilities;
 using UnityEngine;
 

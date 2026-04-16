@@ -1,3 +1,5 @@
+using OnlyFarms.Domain.Quests;
+
 namespace OnlyFarms.Domain.Hotspots
 {
     public class HotspotData

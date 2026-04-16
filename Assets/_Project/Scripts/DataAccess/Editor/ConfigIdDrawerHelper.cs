@@ -2,33 +2,35 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-// Общий хелпер — убирает дублирование между LocationIdDrawer и HotspotIdDrawer
-public static class ConfigIdDrawerHelper
+namespace OnlyFarms._Project.Scripts.DataAccess.Editor
 {
-    public static void DrawPopup(Rect rect, SerializedProperty property, GUIContent label, List<string> names)
+    public static class ConfigIdDrawerHelper
     {
-        var current = property.stringValue;
-        var foundIndex = names.IndexOf(current);
-        var isMissing = !string.IsNullOrEmpty(current) && foundIndex < 0;
+        public static void DrawPopup(Rect rect, SerializedProperty property, GUIContent label, List<string> names)
+        {
+            var current = property.stringValue;
+            var foundIndex = names.IndexOf(current);
+            var isMissing = !string.IsNullOrEmpty(current) && foundIndex < 0;
 
-        var options = new List<string> { "(None)" };
-        if (isMissing) options.Add($"⚠ {current} (missing)");
-        options.AddRange(names);
+            var options = new List<string> { "(None)" };
+            if (isMissing) options.Add($"⚠ {current} (missing)");
+            options.AddRange(names);
 
-        int selectedIndex;
-        if (string.IsNullOrEmpty(current)) selectedIndex = 0;
-        else if (isMissing) selectedIndex = 1;
-        else selectedIndex = foundIndex + 1;
+            int selectedIndex;
+            if (string.IsNullOrEmpty(current)) selectedIndex = 0;
+            else if (isMissing) selectedIndex = 1;
+            else selectedIndex = foundIndex + 1;
 
-        var prev = GUI.backgroundColor;
-        if (isMissing) GUI.backgroundColor = new Color(1f, 0.45f, 0.45f);
+            var prev = GUI.backgroundColor;
+            if (isMissing) GUI.backgroundColor = new Color(1f, 0.45f, 0.45f);
 
-        var newIndex = EditorGUI.Popup(rect, label.text, selectedIndex, options.ToArray());
+            var newIndex = EditorGUI.Popup(rect, label.text, selectedIndex, options.ToArray());
 
-        GUI.backgroundColor = prev;
+            GUI.backgroundColor = prev;
 
-        if (newIndex == 0) property.stringValue = string.Empty;
-        else if (isMissing && newIndex == 1) property.stringValue = current;
-        else property.stringValue = names[isMissing ? newIndex - 2 : newIndex - 1];
+            if (newIndex == 0) property.stringValue = string.Empty;
+            else if (isMissing && newIndex == 1) property.stringValue = current;
+            else property.stringValue = names[isMissing ? newIndex - 2 : newIndex - 1];
+        }
     }
 }

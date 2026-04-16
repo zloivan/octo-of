@@ -2,44 +2,46 @@ using System.Collections.Generic;
 using OnlyFarms.DataAccess;
 using UnityEditor;
 
-public static class QuestConfigCache
+namespace OnlyFarms._Project.Scripts.DataAccess.Editor
 {
-    public static readonly List<string> EventIds = new();
-    public static bool IsBuilt = false;
-
-    public static void Refresh()
+    public static class QuestConfigCache
     {
-        EventIds.Clear();
-        var seen = new HashSet<string>();
+        public static readonly List<string> EventIds = new();
+        public static bool IsBuilt = false;
 
-        // Читаем все QuestDefinitionSO в проекте — не важно к какому дню привязаны
-        var guids = AssetDatabase.FindAssets("t:QuestDefinitionSO");
-        foreach (var guid in guids)
+        public static void Refresh()
         {
-            var path  = AssetDatabase.GUIDToAssetPath(guid);
-            var asset = AssetDatabase.LoadAssetAtPath<QuestDefinitionSO>(path);
-            if (asset == null) continue;
+            EventIds.Clear();
+            var seen = new HashSet<string>();
 
-            var so         = new SerializedObject(asset);
-            var objectives = so.FindProperty("_objectivesList");
-            if (objectives == null) continue;
-
-            for (var i = 0; i < objectives.arraySize; i++)
+            var guids = AssetDatabase.FindAssets("t:QuestDefinitionSO");
+            foreach (var guid in guids)
             {
-                var eventIdProp = objectives
-                    .GetArrayElementAtIndex(i)
-                    .FindPropertyRelative("EventId");
+                var path  = AssetDatabase.GUIDToAssetPath(guid);
+                var asset = AssetDatabase.LoadAssetAtPath<QuestDefinitionSO>(path);
+                if (asset == null) continue;
 
-                if (eventIdProp == null || string.IsNullOrEmpty(eventIdProp.stringValue))
-                    continue;
+                var so         = new SerializedObject(asset);
+                var objectives = so.FindProperty("_objectivesList");
+                if (objectives == null) continue;
 
-                if (seen.Add(eventIdProp.stringValue))
-                    EventIds.Add(eventIdProp.stringValue);
+                for (var i = 0; i < objectives.arraySize; i++)
+                {
+                    var eventIdProp = objectives
+                        .GetArrayElementAtIndex(i)
+                        .FindPropertyRelative("EventId");
+
+                    if (eventIdProp == null || string.IsNullOrEmpty(eventIdProp.stringValue))
+                        continue;
+
+                    if (seen.Add(eventIdProp.stringValue))
+                        EventIds.Add(eventIdProp.stringValue);
+                }
             }
-        }
 
-        EventIds.Sort();
-        IsBuilt = true;
+            EventIds.Sort();
+            IsBuilt = true;
+        }
     }
 }
 

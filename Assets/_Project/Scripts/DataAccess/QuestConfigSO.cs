@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using OnlyFarms.Domain;
+using OnlyFarms.Domain.Quests;
 using UnityEngine;
 using UnityEngine.Serialization;
 

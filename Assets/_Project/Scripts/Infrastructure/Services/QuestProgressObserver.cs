@@ -3,6 +3,7 @@ using OnlyFarms.DataAccess;
 using OnlyFarms.Domain;
 using OnlyFarms.Domain.Hotspots;
 using OnlyFarms.Domain.Locations;
+using OnlyFarms.Domain.Quests;
 using OnlyFarms.Utilities;
 
 namespace OnlyFarms.Infrastructure.Services

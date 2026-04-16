@@ -1,6 +1,6 @@
 using System;
 
-namespace OnlyFarms.Domain
+namespace OnlyFarms.Domain.Quests
 {
     public class QuestObjectiveInstance
     {
