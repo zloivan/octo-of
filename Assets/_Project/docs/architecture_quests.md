@@ -444,6 +444,8 @@ public class DaySessionSource : IFreeRoamSessionSource
 
 ## 6. GameFlowService (изменения)
 
+> **⚠️ Gap (зафиксирован в Ticket 3.0.1):** `ILocationNarrativeSource` и `IItemNarrativeSource` сейчас заглушены (`AlwaysNullNarrativeSource`, `AlwaysNullItemNarrativeSource`). Реализация — `DayNarrativeSource` через `NarrativeTriggerEntry[]` в `DayConfigSO`, устанавливается в `DaySessionOrchestrator.StartDay`. Тикет: **Epic 3, Ticket 3.0.1**.
+
 `GameFlowService` остаётся чистым слушателем. Добавляется симметричный `ClearSessionSource`:
 
 ```csharp

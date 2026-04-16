@@ -162,17 +162,154 @@ Assets/Scripts/Narrative/
 
 ---
 
+---
+
+### Ticket 3.0.1 — [FEATURE] NarrativeTriggerEntry + DayNarrativeSource — реализация ILocationNarrativeSource / IItemNarrativeSource
+
+**Labels:** `feature`, `config`, `integration`
+**Estimate:** 3.5h
+**Milestone:** Demo
+**Depends on:** Ticket 2.4.3 (DaySessionOrchestrator), Ticket 2.4.1 (QuestService)
+
+#### Контекст
+
+`ILocationNarrativeSource` и `IItemNarrativeSource` используются в `GameFlowService` для запуска нарративного блока при входе в локацию и при клике на предмет. Оба интерфейса сейчас заглушены (`AlwaysNullNarrativeSource`, `AlwaysNullItemNarrativeSource`). Тикетов на их реализацию в Epic 2 нет — это gap в планировании, зафиксированный в ходе работы над Ticket 2.6.1.
+
+GDD (mechanics_gdd.md) явно описывает оба сценария:
+- *"При входе на некоторые локации может автоматически запускаться короткая сюжетная сцена"*
+- *"При клике в зоне интерактивного предмета воспроизводится диалог с реакцией ГГ"*
+
+Оба сценария требуют условий (день, состояние квеста) — не каждый вход/клик запускает нарратив.
+
+#### Описание
+
+Ввести `NarrativeTriggerEntry` в `DayConfigSO` по аналогии с `HotspotEntry` в `LocationConfigSO`. На старте дня `DaySessionOrchestrator` создаёт `DayNarrativeSource` из этих данных и передаёт его в `GameFlowService`.
+
+---
+
+**Файл:** `Assets/Scripts/Quests/Config/NarrativeTriggerEntry.cs`
+```csharp
+public enum NarrativeTriggerType { OnLocationEnter, OnItemPickup }
+
+public enum NarrativeTriggerCondition { Always, RequiresQuestCompleted }
+
+[Serializable]
+public class NarrativeTriggerEntry
+{
+    public NarrativeTriggerType  Type;
+    public string                TriggerId;       // locationId или hotspotId
+    public string                ScriptName;
+    public string                Label;
+    public NarrativeTriggerCondition Condition;
+    public QuestDefinitionSO     RequiredQuest;   // только для RequiresQuestCompleted
+}
+```
+
+**Изменение:** `Assets/Scripts/Quests/Config/DayConfigSO.cs`
+```csharp
+// Добавить поле:
+public NarrativeTriggerEntry[] NarrativeTriggers;
+```
+
+**Файл:** `Assets/Scripts/Quests/DayNarrativeSource.cs`
+```csharp
+public class DayNarrativeSource : ILocationNarrativeSource, IItemNarrativeSource
+{
+    private readonly NarrativeTriggerEntry[] _triggers;
+    private readonly IQuestStatusSource      _questSource;
+
+    public DayNarrativeSource(NarrativeTriggerEntry[] triggers, IQuestStatusSource questSource)
+    {
+        _triggers    = triggers;
+        _questSource = questSource;
+    }
+
+    // ILocationNarrativeSource
+    public string GetOnEnterScript(string locationId) =>
+        GetScript(NarrativeTriggerType.OnLocationEnter, locationId);
+
+    public string GetOnEnterLabel(string locationId) =>
+        GetLabel(NarrativeTriggerType.OnLocationEnter, locationId);
+
+    // IItemNarrativeSource
+    public string GetOnUseScript(string hotspotId) =>
+        GetScript(NarrativeTriggerType.OnItemPickup, hotspotId);
+
+    public string GetOnUseLabel(string hotspotId) =>
+        GetLabel(NarrativeTriggerType.OnItemPickup, hotspotId);
+
+    private string GetScript(NarrativeTriggerType type, string id)
+    {
+        var entry = FindEntry(type, id);
+        return entry != null ? entry.ScriptName : null;
+    }
+
+    private string GetLabel(NarrativeTriggerType type, string id)
+    {
+        var entry = FindEntry(type, id);
+        return entry?.Label;
+    }
+
+    private NarrativeTriggerEntry FindEntry(NarrativeTriggerType type, string id)
+    {
+        foreach (var e in _triggers)
+        {
+            if (e.Type != type || e.TriggerId != id) continue;
+            if (e.Condition == NarrativeTriggerCondition.Always) return e;
+            if (e.Condition == NarrativeTriggerCondition.RequiresQuestCompleted
+                && e.RequiredQuest != null
+                && _questSource.IsQuestCompleted(e.RequiredQuest.name))
+                return e;
+        }
+        return null;
+    }
+}
+```
+
+**Изменение:** `Assets/Scripts/Quests/DaySessionOrchestrator.cs`
+```csharp
+public void StartDay(string dayId)
+{
+    var config = _gameConfig.QuestConfig.GetDayConfig(dayId);
+    _questService.ActivateDaySession(dayId);
+    _gameFlowService.SetSessionSource(new DaySessionSource(config));
+
+    // Новое: устанавливаем нарративные источники на этот день
+    var narrativeSource = new DayNarrativeSource(config.NarrativeTriggers, _questService);
+    _gameFlowService.SetLocationNarrativeSource(narrativeSource);
+    _gameFlowService.SetItemNarrativeSource(narrativeSource);
+}
+```
+
+> `DayNarrativeSource` реализует оба интерфейса — один объект, одна точка конфигурации на день.
+> Условие `RequiresQuestCompleted` проверяется в рантайме через `IQuestStatusSource` — тот же механизм, что в `HotspotValidator`.
+> При `ResetService` в `GameFlowService` оба источника обнуляются до `AlwaysNull*` — источники живут ровно один день.
+
+---
+
+#### Acceptance Criteria
+
+- [ ] `NarrativeTriggerEntry` сериализуется в Inspector внутри `DayConfigSO.NarrativeTriggers[]`.
+- [ ] При входе в локацию с настроенным триггером (`condition=Always`) — нарратив запускается автоматически.
+- [ ] При `condition=RequiresQuestCompleted` и невыполненном квесте — нарратив не запускается.
+- [ ] При клике на предмет с настроенным триггером (`OnItemPickup`) — нарратив запускается после pickup.
+- [ ] `DaySessionOrchestrator.StartDay` устанавливает оба источника.
+- [ ] Если `NarrativeTriggers` пустой — поведение идентично `AlwaysNull*` (ничего не запускается).
+
+---
+
 ## 📊 Сводная таблица тикетов
 
 | # | Задача | Оценка | Milestone | Labels |
 |---|---|---|---|---|
+| 3.0.1 | NarrativeTriggerEntry + DayNarrativeSource | 3.5h | Demo | `feature` `config` `integration` |
 | 3.1.1 | Конфигурация персонажей | 2h | Demo | `config` `feature` |
 | 3.1.2 | Конфигурация фонов | 1.5h | Demo | `config` `feature` |
 | 3.2.1 | Prologue.nani | 3h | Demo | `narrative` `feature` |
 | 3.2.2 | Day1.nani | 5h | Demo | `narrative` `feature` |
 | 3.3.1 | End-to-end проверка | 1.5h | Demo | `integration` `qa-tooling` |
 
-**Итого:** ~13h (с 20% буфером ~15.5h)
+**Итого:** ~16.5h (с 20% буфером ~20h)
 
 ---
 
@@ -180,6 +317,7 @@ Assets/Scripts/Narrative/
 
 | Задача | Блокирует / Зависит |
 |---|---|
+| 3.0.1 (NarrativeTriggerEntry) | Зависит от 2.4.3 (DaySessionOrchestrator); блокирует локационные нарративные вставки в 3.2.2 |
 | 3.1.1 + 3.1.2 (конфиги) | Блокируют 3.2.1 и 3.2.2 — скрипты не компилируются без конфигов |
 | 3.2.1 (Prologue) | Блокирует 3.3.1 |
 | 3.2.2 (Day1) | Блокирует 3.3.1; P&C секции зависят от Epic 1 (LocationService) |
