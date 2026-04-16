@@ -43,7 +43,7 @@ namespace OnlyFarms.Infrastructure
         {
             { "living_room_secret_2", ("Test_Continue", "secret_2") },
             { "living_room_secret_3", ("Test_Continue", "secret_3") },
-            { "living_room_secret_4", ("Test_Continue", "secret_4") },
+            { "living_room_secret_4", ("Test_QuestE2E", "test_quest_trigger") },
         };
 
         public string GetOnUseScript(string itemId) =>

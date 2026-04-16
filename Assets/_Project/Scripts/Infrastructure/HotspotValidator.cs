@@ -19,6 +19,8 @@ namespace OnlyFarms.Domain.Hotspots
                     return _questService?.IsQuestCompleted(hotspotData.QuestDefinition.GetDisplayName()) ?? true;
                 case ActivationCondition.RequiresFlag:
                     return false;
+                case ActivationCondition.RequiresObjectiveId:
+                    return _questService?.IsObjectiveCompleted(hotspotData.RequiredObjectiveId) ?? true;
                 default:
                     return true;
             }

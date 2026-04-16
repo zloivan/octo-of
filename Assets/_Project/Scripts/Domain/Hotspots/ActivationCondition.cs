@@ -5,5 +5,6 @@ namespace OnlyFarms.Domain.Hotspots
         Always,
         RequiresQuestId,
         RequiresFlag,
+        RequiresObjectiveId
     }
 }

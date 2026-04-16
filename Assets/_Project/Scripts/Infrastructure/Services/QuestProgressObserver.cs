@@ -1,5 +1,7 @@
 using Naninovel;
+using OnlyFarms.DataAccess;
 using OnlyFarms.Domain;
+using OnlyFarms.Domain.Hotspots;
 using OnlyFarms.Domain.Locations;
 using OnlyFarms.Utilities;
 
@@ -11,12 +13,14 @@ namespace OnlyFarms.Infrastructure.Services
         private readonly LocationService _locationService;
         private readonly IQuestProgressReporter _progressReporter;
         private readonly IQuestStatusSource _questSource;
+        private readonly IHotspotRepository _hotspotRepository;
 
-        public QuestProgressObserver(LocationService locationService, QuestService progressReporter)
+        public QuestProgressObserver(LocationService locationService, QuestService progressReporter, GameConfig config)
         {
             _locationService = locationService;
             _progressReporter = progressReporter;
             _questSource = progressReporter;
+            _hotspotRepository = config.LocationConfig;
         }
 
         public UniTask InitializeService()
@@ -24,7 +28,7 @@ namespace OnlyFarms.Infrastructure.Services
             _locationService.OnLocationEnterCompleted += LocationService_OnLocationEnterCompleted;
             _locationService.OnItemPickedUp += LocationService_OnItemPickedUp;
             _questSource.OnQuestCompleted += QuestSource_OnQuestCompleted;
-
+            _questSource.OnQuestObjectiveTicked += QuestSource_OnQuestObjectiveTicked;
             OFLogger.Log("<color=blue>Initialized...</color>");
             return UniTask.CompletedTask;
         }
@@ -34,6 +38,7 @@ namespace OnlyFarms.Infrastructure.Services
             _locationService.OnLocationEnterCompleted -= LocationService_OnLocationEnterCompleted;
             _locationService.OnItemPickedUp -= LocationService_OnItemPickedUp;
             _questSource.OnQuestCompleted -= QuestSource_OnQuestCompleted;
+            _questSource.OnQuestObjectiveTicked -= QuestSource_OnQuestObjectiveTicked;
 
             OFLogger.Log("<color=red>Destroyed</color>");
         }
@@ -45,10 +50,17 @@ namespace OnlyFarms.Infrastructure.Services
         private void QuestSource_OnQuestCompleted(QuestInstance obj) =>
             _locationService.RefreshConditionalHotspots();
 
+        private void QuestSource_OnQuestObjectiveTicked(QuestInstance quest, QuestObjectiveInstance objective)
+        {
+            if (objective.IsCompleted())
+                _locationService.RefreshConditionalHotspots();
+        }
+        
         private void LocationService_OnItemPickedUp(string hotspotId)
         {
             OFLogger.Log($"Item picked: {hotspotId}");
-            _progressReporter.ReportEvent(hotspotId);
+            var hotspotData = _hotspotRepository.GetHotspot(hotspotId);
+            _progressReporter.ReportEvent(hotspotData.ObjectiveEventId);
         }
 
         private void LocationService_OnLocationEnterCompleted(LocationData locationData)

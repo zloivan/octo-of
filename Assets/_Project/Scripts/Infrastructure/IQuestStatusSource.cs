@@ -12,8 +12,8 @@ namespace OnlyFarms.Infrastructure
 
         event Action<QuestInstance> OnQuestAdded; 
         event Action<QuestInstance, QuestObjectiveInstance> OnQuestObjectiveTicked; 
-        event Action<QuestInstance> OnQuestCompleted; 
-        
+        event Action<QuestInstance> OnQuestCompleted;
+        bool IsObjectiveCompleted(string objId);
         event Func<UniTask> OnAllQuestsCompleted;
     }
 }

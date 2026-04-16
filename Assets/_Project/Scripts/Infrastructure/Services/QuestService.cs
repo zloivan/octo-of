@@ -21,6 +21,7 @@ namespace OnlyFarms.Infrastructure.Services
         private readonly IQuestRepository _questRepository;
         private QuestSession _session;
         private string _activeDayId;
+        private readonly HashSet<string> _completedObjectiveEventIds = new();
 
         public QuestService(GameConfig questRepository) =>
             _questRepository = questRepository.QuestConfig;
@@ -29,7 +30,7 @@ namespace OnlyFarms.Infrastructure.Services
         {
             if (_session != null)
                 OnSessionReset?.Invoke();
-            
+
             var dayQuests = _questRepository.GetQuestsOfDay(dayId);
             if (dayQuests == null || dayQuests.Length == 0)
             {
@@ -41,9 +42,7 @@ namespace OnlyFarms.Infrastructure.Services
             _session = new QuestSession(dayQuests);
 
             foreach (var visibleQuest in _session.GetVisibleQuests())
-            {
                 OnQuestAdded?.Invoke(visibleQuest);
-            }
         }
 
         public void ReportEvent(string eventId)
@@ -55,6 +54,9 @@ namespace OnlyFarms.Infrastructure.Services
 
             if (result.IsEmpty)
                 return;
+
+            if (result.Objective.IsCompleted())
+                _completedObjectiveEventIds.Add(result.Objective.GetDefinition().EventId);
 
             OnQuestObjectiveTicked?.Invoke(result.Quest, result.Objective);
 
@@ -83,13 +85,11 @@ namespace OnlyFarms.Infrastructure.Services
 
         public void SaveServiceState(GameStateMap stateMap)
         {
-            if (_session == null || string.IsNullOrEmpty(_activeDayId))
-                return;
-
             stateMap.SetState(new QuestServiceState
             {
-                Snapshot = _session.GetSnapshot(),
+                Snapshot = _session?.GetSnapshot(),
                 DayId = _activeDayId,
+                CompletedObjectiveEventIds = _completedObjectiveEventIds.ToArray(),
             });
 
             OFLogger.Log("QuestService state saved");
@@ -104,9 +104,17 @@ namespace OnlyFarms.Infrastructure.Services
                 return UniTask.CompletedTask;
             }
 
+            foreach (var eventId in state.CompletedObjectiveEventIds ?? Array.Empty<string>())
+                _completedObjectiveEventIds.Add(eventId);
+            
             ActivateDaySession(state.DayId);
             _session.LoadSnapshot(state.Snapshot);
 
+            foreach (var quest in _session.GetAllQuestsList())
+            foreach (var obj in quest.GetObjectives())
+                if (obj.IsCompleted())
+                    _completedObjectiveEventIds.Add(obj.GetDefinition().EventId);
+            
             foreach (var quest in _session.GetAllQuestsList())
                 if (quest.IsCompleted())
                     OnQuestCompleted?.Invoke(quest);
@@ -151,9 +159,9 @@ namespace OnlyFarms.Infrastructure.Services
                 foreach (var objective in quest.GetObjectives())
                 {
                     while (!objective.IsCompleted())
-                    {
                         objective.TryReport(objective.GetDefinition().EventId);
-                    }
+
+                    _completedObjectiveEventIds.Add(objective.GetDefinition().EventId);
                 }
             }
 
@@ -163,6 +171,22 @@ namespace OnlyFarms.Infrastructure.Services
             if (_session.AreAllCompleted())
                 OnAllQuestsCompleted?.Invoke().Forget();
         }
+
+        public bool IsObjectiveCompleted(string objId)
+        {
+            if (_completedObjectiveEventIds.Contains(objId))
+                return true;
+
+            if (_session == null)
+                return false;
+
+            foreach (var quest in _session.GetAllQuestsList())
+            foreach (var obj in quest.GetObjectives())
+                if (obj.GetDefinition().EventId == objId && obj.IsCompleted())
+                    return true;
+
+            return false;
+        }
     }
 
     [Serializable]
@@ -170,5 +194,6 @@ namespace OnlyFarms.Infrastructure.Services
     {
         public QuestSessionSnapshot Snapshot;
         public string DayId;
+        public string[] CompletedObjectiveEventIds;
     }
 }

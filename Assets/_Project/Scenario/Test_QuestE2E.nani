@@ -1,0 +1,32 @@
+; ====================================================
+; Test_QuestE2E.nani — End-to-end: квест флоу День 1
+; Квесты VisitLocation / FindItem — автоматом через QuestProgressObserver.
+; PlayMiniGame — вручную через @reportQuestEvent после мини-игры.
+; ====================================================
+
+; === СТАРТ ДНЯ ===
+Narrator: "День 1 начинается. Идём исследовать."|#9|
+@activateDayQuests day1
+@exitNarrative front_porch
+
+
+; === ЗАВЕРШЕНИЕ ДНЯ ===
+# day1_end
+Narrator: "Все задания дня 1 выполнены!"|#12|
+@activateDayQuests day2
+@exitNarrative
+
+# day2_end
+Narrator: "Задания дня 2 выполнены!"|#13|
+@activateDayQuests day3
+@exitNarrative
+
+# day3_end
+Narrator: "Удивительно, тебе удалось выполнить все задания дня 3!"|#14|
+@exitNarrative
+
+
+# test_quest_trigger
+Narrator: "Квест narrative_quest выполненен"|#11|
+@reportQuestEvent id:narrative_quest
+@exitNarrative

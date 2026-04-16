@@ -1,6 +1,8 @@
 
-Narrator: "До фри рума."
+Narrator: "До фри рума."|#1|
 
+@goto Test_QuestE2E
+@stop
 ; Начало дня — активируем квесты и переходим во free roam
 @activateDayQuests day1
 @exitNarrative front_porch
@@ -11,14 +13,14 @@ Narrator: "До фри рума."
 @stop
 
 @exitNarrative front_porch returnScript:Test returnLabel:after_roam
-Narrator: "Этого не должно быть видно сразу."
+Narrator: "Этого не должно быть видно сразу."|#2|
 
 # after_roam
-Narrator: "Нарратив продолжился."
-Narrator: "Нарратив и продолжился."
-Narrator: "Он все продолжается...."
+Narrator: "Нарратив продолжился."|#3|
+Narrator: "Нарратив и продолжился."|#4|
+Narrator: "Он все продолжается...."|#5|
 @exitNarrative returnScript:Test returnLabel:after_roam_2
 
 # after_roam_2
-Narrator: "А потом мы выходим"
+Narrator: "А потом мы выходим"|#6|
 @stop

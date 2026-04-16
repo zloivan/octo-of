@@ -1,4 +1,5 @@
 using System;
+using OnlyFarms.Attributes;
 using OnlyFarms.Domain.Hotspots;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -22,11 +23,17 @@ namespace OnlyFarms.DataAccess
 
         [SerializeField] [LocationId] private string _targetLocationId;
         [SerializeField] private string _label;
-        [SerializeField] private QuestDefinitionSO _questDefinitionSO;
 
-        
+        [FormerlySerializedAs("_questEventId")] [SerializeField] [QuestEventId]
+        private string _triggerObjectiveEventId;
+
+        [FormerlySerializedAs("_questDefinitionSO")] [SerializeField]
+        private QuestDefinitionSO _requireQuest;
+
+        [SerializeField] [QuestEventId] private string _requiredObjectiveEventId;
+
         public HotspotData GetHotspotData(string locationID) =>
             new(_id, _type, _condition, _conditionValue, _targetLocationId, locationID, _label,
-                _questDefinitionSO?.ToDefinition() ?? null);
+                _requireQuest?.ToDefinition(), _requiredObjectiveEventId, _triggerObjectiveEventId);
     }
 }
