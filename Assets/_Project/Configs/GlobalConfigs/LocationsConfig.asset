@@ -30,21 +30,27 @@ MonoBehaviour:
       _conditionValue: false
       _targetLocationId: test_location_2
       _label: 
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     - _id: hotspot2
       _type: 2
       _condition: 1
       _conditionValue: test_quest_wrong
       _targetLocationId: 
       _label: 
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     - _id: hotspot3
       _type: 2
       _condition: 1
       _conditionValue: test_quest
       _targetLocationId: 
       _label: 
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     TransitionDuration: 3
   Locations:
   - Id: test_location
@@ -64,21 +70,27 @@ MonoBehaviour:
       _conditionValue: false
       _targetLocationId: test_location_2
       _label: Test Location 2
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     - _id: hotspot2
       _type: 2
       _condition: 1
       _conditionValue: test_quest_wrong
       _targetLocationId: 
       _label: 
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     - _id: hotspot3
       _type: 2
       _condition: 1
       _conditionValue: test_quest
       _targetLocationId: 
       _label: 
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     TransitionDuration: 3
   - Id: test_location_2
     BackgroundName: Alicias_Room_Day
@@ -97,7 +109,9 @@ MonoBehaviour:
       _conditionValue: 
       _targetLocationId: test_location
       _label: Test Location
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     TransitionDuration: 0.3
   - Id: front_porch
     BackgroundName: Heros_Room_Day
@@ -112,32 +126,40 @@ MonoBehaviour:
     Hotspots:
     - _id: porch_to_living_room
       _type: 0
-      _condition: 1
+      _condition: 0
       _conditionValue: 
       _targetLocationId: living_room
       _label: Living Room
-      _questDefinitionSO: {fileID: 11400000, guid: ec68ecefacc814e71ad96544a11e4bfd, type: 2}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     - _id: porch_to_backyard
       _type: 0
       _condition: 0
       _conditionValue: 
       _targetLocationId: backyard
       _label: Backyard
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     - _id: porch_to_jasons_house
       _type: 0
       _condition: 0
       _conditionValue: 
       _targetLocationId: jasons_house
       _label: Jasons House
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     - _id: porch_to_garage
       _type: 0
       _condition: 0
       _conditionValue: 
       _targetLocationId: garage
       _label: Garage
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     TransitionDuration: 0.3
   - Id: living_room
     BackgroundName: Heros_Room_Morning
@@ -152,32 +174,40 @@ MonoBehaviour:
     Hotspots:
     - _id: living_room_secret_1
       _type: 2
-      _condition: 0
+      _condition: 3
       _conditionValue: 
       _targetLocationId: 
       _label: 
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: find_secret_living_room
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: barn
     - _id: living_room_secret_2
       _type: 2
-      _condition: 0
+      _condition: 3
       _conditionValue: 
       _targetLocationId: 
       _label: 
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: find_secret_living_room
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: barn
     - _id: living_room_secret_3
       _type: 2
-      _condition: 0
+      _condition: 3
       _conditionValue: 
       _targetLocationId: 
       _label: 
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: find_secret_living_room
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: barn
     - _id: living_room_secret_4
       _type: 2
-      _condition: 0
+      _condition: 1
       _conditionValue: 
       _targetLocationId: 
       _label: 
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 11400000, guid: ec68ecefacc814e71ad96544a11e4bfd, type: 2}
+      _requiredObjectiveEventId: 
     TransitionDuration: 0.3
   - Id: backyard
     BackgroundName: Jays_Room
@@ -192,25 +222,31 @@ MonoBehaviour:
     Hotspots:
     - _id: backyard_to_barn
       _type: 0
-      _condition: 0
+      _condition: 3
       _conditionValue: 
       _targetLocationId: barn
       _label: Barn
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: living_room
     - _id: backyard_to_field
       _type: 0
       _condition: 0
       _conditionValue: 
       _targetLocationId: tractor_field
       _label: Tractor Field
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     - _id: backyard_to_front_porch
       _type: 0
       _condition: 0
       _conditionValue: 
       _targetLocationId: front_porch
       _label: Front Porch
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     TransitionDuration: 0.3
   - Id: barn
     BackgroundName: Kitchen_Day
@@ -229,21 +265,27 @@ MonoBehaviour:
       _conditionValue: 
       _targetLocationId: paddock
       _label: Paddock
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     - _id: barn_to_field
       _type: 0
       _condition: 0
       _conditionValue: 
       _targetLocationId: tractor_field
       _label: Tractor Field
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     - _id: barn_to_backyard
       _type: 0
       _condition: 0
       _conditionValue: 
       _targetLocationId: backyard
       _label: Backyard
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     TransitionDuration: 0.3
   - Id: paddock
     BackgroundName: Kitchen_Night
@@ -286,14 +328,18 @@ MonoBehaviour:
       _conditionValue: 
       _targetLocationId: backyard
       _label: Backyard
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     - _id: field_to_barn
       _type: 0
       _condition: 0
       _conditionValue: 
       _targetLocationId: barn
       _label: Barn
-      _questDefinitionSO: {fileID: 0}
+      _triggerObjectiveEventId: 
+      _requireQuest: {fileID: 0}
+      _requiredObjectiveEventId: 
     TransitionDuration: 0.3
   - Id: garage
     BackgroundName: Alicias_Room_Day

@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 87bdcd45e99d4d1f9056c78535bf0d4a, type: 3}
-  m_Name: TestQuestDefinition_3
+  m_Name: Day2_quest_2
   m_EditorClassIdentifier: 
-  _displayName: Quest_4
+  _displayName: Quest_Seq_2
   _objectivesList:
   - Type: 1
-    DisplayText: Find Item 7
-    EventId: fi_7
+    DisplayText: Find Secret 4 in living room
+    EventId: narrative_quest
     RequiredCount: 1

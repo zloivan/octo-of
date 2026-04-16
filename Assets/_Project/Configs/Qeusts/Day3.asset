@@ -10,12 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 308160d24a8848bfa0a4e0c1e5b902f2, type: 3}
-  m_Name: Day2
+  m_Name: Day3
   m_EditorClassIdentifier: 
-  _dayId: day2
+  _dayId: day3
   _questsArray:
-  - {fileID: 11400000, guid: 471cd014ec2184065b36da694bd53d92, type: 2}
-  - {fileID: 11400000, guid: 03a384d5a18c64f2b9c482df561181dc, type: 2}
+  - {fileID: 11400000, guid: 0d8b9e886b08249c6954c3be8053a271, type: 2}
+  - {fileID: 11400000, guid: 3df3e0fce26484447a42f0c6cbff807f, type: 2}
+  - {fileID: 11400000, guid: 3cc6e8297df0e4cc48f6e94f3c929303, type: 2}
+  - {fileID: 11400000, guid: 2e83b0c3d419b44daa9932e0552527e4, type: 2}
   _naniScriptReference:
-    scriptName: Test_Continue
-    labelName: secret_2
+    scriptName: Test_QuestE2E
+    labelName: day3_end
