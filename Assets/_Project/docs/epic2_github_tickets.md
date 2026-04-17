@@ -1735,6 +1735,138 @@ public class HotspotSpawner
 
 ---
 
+### Ticket 2.7.4 — [REFACTOR] InteractableItemConfigSO — data-driven предметы + разделение HotspotData
+
+**Labels:** `refactor`, `config`, `domain`
+**Estimate:** 4h
+**Milestone:** Tech Debt — Location System Refactor
+**Depends on:** Ticket 2.7.3
+
+#### Контекст
+
+`InteractableItemConfigSO` существует (тип, `OnClickScript`, `ObjectiveTag`), но нигде не используется. Вместо этого маппинг `itemId → naniScript` захардкожен в `HardcodedItemNarrativeSourceLivingRoom` прямо в C#. Параллельно: `HotspotData` в доменном слое тянет `HotspotType`, `QuestDefinition`, `RequiredObjectiveId` — это не POCO, это бизнес-логика разных модулей, слитая в один тип.
+
+---
+
+#### Архитектурная цель
+
+**1. HotspotData остаётся POCO**
+
+Domain-тип хотспота должен содержать только то, что нужно для логики самих хотспотов: доступен ли хотспот, нужно ли его потреблять после клика. Всё остальное (к какой локации ведёт, какой скрипт запустить, какой квест тригернуть) — ответственность соответствующих модулей.
+
+```csharp
+// HotspotData — остаётся только это:
+public class HotspotData
+{
+    public readonly string Id;
+    public readonly bool   IsConsumable;       // Item — да, Transition/MiniGame — нет
+    public readonly ActivationCondition Condition;
+    public readonly string ConditionValue;
+    public readonly string LocationId;
+}
+```
+
+**2. HotspotEntry (DataAccess) — единая точка конфигурации, несколько выходов**
+
+`HotspotEntry` содержит все поля для всех типов хотспотов и реализует несколько интерфейсов репозиториев. Каждый модуль запрашивает свой тип данных:
+
+```csharp
+[Serializable]
+public class HotspotEntry : ITransitionRepository, IItemRepository
+{
+    // Общие поля
+    [SerializeField] private string         _id;
+    [SerializeField] private HotspotType    _type;   // только для конфигурации в Editor
+    [SerializeField] private ActivationCondition _condition;
+    [SerializeField] private string         _conditionValue;
+
+    // Поля для Transition
+    [SerializeField] [LocationId] private string _targetLocationId;
+    [SerializeField] private string         _label;
+
+    // Поля для Quest-condition
+    [SerializeField] private QuestDefinitionSO  _requireQuest;
+    [SerializeField] [QuestEventId] private string _requiredObjectiveEventId;
+    [SerializeField] [QuestEventId] private string _triggerObjectiveEventId;
+
+    // Поля для Item  ← НОВОЕ
+    [SerializeField] private InteractableItemConfigSO _itemConfig;
+
+    // Выход 1: для HotspotLogic
+    public HotspotData GetHotspotData(string locationId) =>
+        new(_id, _type == HotspotType.Item, _condition, _conditionValue, locationId);
+
+    // Выход 2: для модуля переходов
+    public TransitionData GetTransitionData() =>
+        new(_id, _targetLocationId, _label, _requireQuest?.ToDefinition(),
+            _requiredObjectiveEventId, _triggerObjectiveEventId);
+
+    // Выход 3: для модуля предметов
+    public ItemData GetItemData() =>
+        _type == HotspotType.Item && _itemConfig != null
+            ? new ItemData(_id, _itemConfig.GetOnClickScript(), _itemConfig.GetObjectiveTag())
+            : null;
+}
+```
+
+**3. Нарративный источник предметов — data-driven через конфиг**
+
+`IItemNarrativeSource` остаётся интерфейсом. `HardcodedItemNarrativeSourceLivingRoom` и `HardcodedItemNarrativeSource` — удаляются. Реализация `ConfigItemNarrativeSource` читает данные из `LocationConfigSO` через `IItemRepository`:
+
+```csharp
+public class ConfigItemNarrativeSource : IItemNarrativeSource
+{
+    // Собирает ItemData из всех HotspotEntry при инициализации
+    // GetOnUseScript(itemId) → ищет ItemData.Script
+    // GetOnUseLabel(itemId)  → ищет ItemData.Label
+}
+```
+
+Кто инжектирует source в `GameFlowService` — решается выше: `LocationService` или отдельный `ItemInteractionService` при `InitializeService` выставляет `GameFlowService.SetItemNarrativeSource(new ConfigItemNarrativeSource(...))`.
+
+**4. ItemData — новый доменный тип**
+
+```csharp
+public class ItemData
+{
+    public readonly string Id;
+    public readonly string OnUseScript;   // Naninovel script name
+    public readonly string ObjectiveTag;  // EventId для QuestService
+}
+```
+
+---
+
+#### Что удалить
+
+- `HardcodedItemNarrativeSource` — заменяется `ConfigItemNarrativeSource`
+- `HardcodedItemNarrativeSourceLivingRoom` — то же
+- `AlwaysNullItemNarrativeSource` — оставить только для тестов / Editor stub
+- Поля `QuestDefinition`, `RequiredObjectiveId`, `ObjectiveEventId`, `TargetLocationId`, `Label` из `HotspotData`
+
+#### Что добавить / изменить
+
+- `InteractableItemConfigSO` — добавить публичные методы `GetOnClickScript()`, `GetObjectiveTag()`
+- `HotspotEntry` — добавить `[SerializeField] private InteractableItemConfigSO _itemConfig` + метод `GetItemData()`
+- `ItemData` — новый доменный POCO
+- `ConfigItemNarrativeSource` — data-driven реализация `IItemNarrativeSource`
+- `HotspotData` — убрать лишние поля, добавить `IsConsumable`
+- Новые интерфейсы `ITransitionRepository`, `IItemRepository` — реализуются в `HotspotEntry`
+
+---
+
+#### Acceptance Criteria
+
+- [ ] `HotspotData` — только `Id`, `IsConsumable`, `Condition`, `ConditionValue`, `LocationId`. Никаких Unity-типов, никаких `QuestDefinition`.
+- [ ] `HotspotEntry.GetItemData()` возвращает `null` если тип не `Item` или `_itemConfig` не назначен.
+- [ ] `ConfigItemNarrativeSource` корректно резолвит script и label по `itemId`.
+- [ ] `HardcodedItemNarrativeSource*` классы удалены; проект компилируется.
+- [ ] `GameFlowService` получает `IItemNarrativeSource` через DI или через `SetItemNarrativeSource` — не через `Engine.GetService` внутри метода.
+- [ ] Переход к нарративу при клике на Item-хотспот работает data-driven (берёт из `InteractableItemConfigSO`).
+- [ ] `QuestProgressObserver.OnItemPickedUp` репортит `ItemData.ObjectiveTag` (не сырой `hotspotId`).
+
+---
+
 ### Ticket 2.7.3 — [REFACTOR] LocationService — убрать логику, оставить фасад
 
 **Labels:** `refactor`, `service`
