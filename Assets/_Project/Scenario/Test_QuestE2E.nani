@@ -30,3 +30,7 @@ Narrator: "Удивительно, тебе удалось выполнить в
 Narrator: "Квест narrative_quest выполненен"|#11|
 @reportQuestEvent id:narrative_quest
 @exitNarrative
+
+#test_force_complete
+@forceCompleteQuests
+@exitNarrative
